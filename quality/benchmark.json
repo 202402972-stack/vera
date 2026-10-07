@@ -1,0 +1,77 @@
+{
+  "dataset": {
+    "products": 2504,
+    "orders": 10000,
+    "visits": 20000,
+    "events": 80000
+  },
+  "database": {
+    "integrity_check": "ok"
+  },
+  "results": [
+    {
+      "label": "Catalogue first page",
+      "requests": 100,
+      "concurrency": 10,
+      "p50_ms": 30.6,
+      "p95_ms": 79.6,
+      "total_ms": 354.1
+    },
+    {
+      "label": "Dashboard product page",
+      "requests": 100,
+      "concurrency": 10,
+      "p50_ms": 24.9,
+      "p95_ms": 33.4,
+      "total_ms": 255.9
+    },
+    {
+      "label": "Indexed product detail",
+      "requests": 100,
+      "concurrency": 10,
+      "p50_ms": 11,
+      "p95_ms": 14,
+      "total_ms": 112
+    },
+    {
+      "label": "Dashboard order page",
+      "requests": 100,
+      "concurrency": 10,
+      "p50_ms": 19,
+      "p95_ms": 25.6,
+      "total_ms": 192.8
+    },
+    {
+      "label": "Order status filter",
+      "requests": 100,
+      "concurrency": 10,
+      "p50_ms": 22.2,
+      "p95_ms": 26.1,
+      "total_ms": 223.2
+    },
+    {
+      "label": "Order customer search",
+      "requests": 20,
+      "concurrency": 4,
+      "p50_ms": 102.2,
+      "p95_ms": 146,
+      "total_ms": 567.4
+    },
+    {
+      "label": "Analytics report (first cold query included)",
+      "requests": 20,
+      "concurrency": 4,
+      "p50_ms": 8.7,
+      "p95_ms": 232.8,
+      "total_ms": 267.3
+    },
+    {
+      "label": "Transactional checkout",
+      "requests": 16,
+      "concurrency": 8,
+      "p50_ms": 32.4,
+      "p95_ms": 34,
+      "total_ms": 64.9
+    }
+  ]
+}
