@@ -257,23 +257,32 @@ function TemplateCard({ template }) {
       </a>
       <div className="v-template-copy">
         <span className="v-eyebrow">
-          {template.name.toUpperCase()} · {template.id === "form" ? "02" : "01"}
+          {template.name.toUpperCase()} ·{" "}
+          {template.id === "gala"
+            ? "01"
+            : template.id === "atelier"
+              ? "02"
+              : "03"}
         </span>
         <div
           className="v-template-palette"
           aria-label={t("ألوان القالب", "Template palette")}
         >
-          {(template.id === "form"
-            ? ["#2a5547", "#172321", "#dce8ef", "#f7f9fa"]
-            : ["#80623e", "#c0b095", "#faf8f4", "#302c27"]
+          {(
+            template.palette ||
+            (template.id === "form"
+              ? ["#2a5547", "#172321", "#dce8ef", "#f7f9fa"]
+              : ["#80623e", "#c0b095", "#faf8f4", "#302c27"])
           ).map((color) => (
             <span key={color} style={{ background: color }} />
           ))}
         </div>
         <h3>
-          {template.id === "form"
-            ? t("تفاصيل يومك، برؤية جديدة.", "Everyday. Reconsidered.")
-            : t("كل تفصيلة، تحكي عنك.", "Every detail, distinctly yours.")}
+          {template.tagline
+            ? t(template.taglineAr, template.tagline)
+            : template.id === "form"
+              ? t("تفاصيل يومك، برؤية جديدة.", "Everyday. Reconsidered.")
+              : t("كل تفصيلة، تحكي عنك.", "Every detail, distinctly yours.")}
         </h3>
         <p>{t(template.descriptionAr, template.description)}</p>
         <div className="v-tags">
@@ -316,7 +325,7 @@ function Home({ config }) {
           <img src={assets + "hero.jpg"} alt="" />
         </div>
         <div className="v-hero-right v-frame" aria-hidden="true">
-          <img src={assets + "storefront.png"} alt="" />
+          <img src={assets + "gala-storefront.png"} alt="" />
         </div>
         <div className="v-hero-copy">
           <span className="v-hero-badge">
@@ -348,11 +357,8 @@ function Home({ config }) {
         <div className="v-mobile-laptop">
           <div className="v-laptop-screen">
             <img
-              src={assets + "storefront.png"}
-              alt={t(
-                "قالب أتيليه على الكمبيوتر",
-                "The Atelier desktop storefront",
-              )}
+              src={assets + "gala-storefront.png"}
+              alt={t("قالب GALA على الكمبيوتر", "The GALA desktop storefront")}
               width="1440"
               height="1000"
             />
@@ -398,8 +404,8 @@ function Home({ config }) {
           </h2>
           <p>
             {t(
-              "أتيليه بطابعه التحريري الدافئ، وFORM برؤيته العصرية. هويتان مختلفتان، وإدارة متكاملة لعلامتك.",
-              "The Atelier’s warm editorial character. FORM’s modern perspective. Two distinct storefronts, one considered merchant studio.",
+              "GALA بفخامته، وأتيليه بدفئه، وFORM برؤيته العصرية. ثلاث هويات مختلفة، وإدارة متكاملة لعلامتك.",
+              "GALA’s quiet luxury. The Atelier’s warm editorial character. FORM’s modern perspective. Three distinct storefronts, each ready for your brand.",
             )}
           </p>
         </div>
@@ -743,7 +749,7 @@ function StoreCard({ store, onRefresh, onAction }) {
   return (
     <article className="v-store-card">
       <div className="v-store-cover">
-        <img src={assets + "storefront.png"} alt="" />
+        <img src={assets + "gala-storefront.png"} alt="" />
         <span className={"v-status " + (store.available ? "live" : "")}>
           {store.suspended
             ? t("موقوف إداريًا", "Suspended")
@@ -1171,8 +1177,8 @@ function Workspace({ config }) {
           <h2>{t("متجرك الأول يبدأ هنا.", "Your first store starts here.")}</h2>
           <p>
             {t(
-              "اختر أتيليه أو FORM، وأضف التفاصيل التي تجعله لك.",
-              "Choose The Atelier or FORM. Add the details that make it yours.",
+              "اختر GALA أو أتيليه أو FORM، وأضف التفاصيل التي تجعله لك.",
+              "Choose GALA, The Atelier or FORM. Add the details that make it yours.",
             )}
           </p>
           <Button onClick={() => setCreate(true)}>
@@ -1599,7 +1605,7 @@ export default function Platform({ initialConfig }) {
               <main className="v-section v-gallery">
                 <div className="v-section-heading">
                   <span className="v-eyebrow">THE TEMPLATE COLLECTION</span>
-                  <h1>The Atelier. FORM.</h1>
+                  <h1>GALA. The Atelier. FORM.</h1>
                 </div>
                 {config.templates.map((x) => (
                   <TemplateCard template={x} key={x.id} />

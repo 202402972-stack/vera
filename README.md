@@ -2,9 +2,9 @@
 
 A bilingual commerce platform built around the existing luxury boutique. One Node.js 24 application, one SQLite database and one Railway volume serve the marketing website, Google customer accounts, customer workspace, owner console, template previews, storefronts and merchant dashboards.
 
-[العربية](README-AR.md) · [Complete release downloads](https://github.com/202402972-stack/vera/releases) · [FORM setup](docs/FORM-QUICKSTART-AR.md)
+[العربية](README-AR.md) · [Complete release downloads](https://github.com/202402972-stack/vera/releases) · [GALA setup](docs/GALA-QUICKSTART-AR.md) · [FORM setup](docs/FORM-QUICKSTART-AR.md)
 
-![FORM storefront](previews/form-2.1/form-desktop.png)
+![GALA storefront](public/platform/assets/gala-storefront.png)
 
 The platform is implemented and locally testable. Live Google sign-in and Paymob collection require your merchant credentials and provider setup; no live payment or deployment is claimed by this repository.
 
@@ -16,7 +16,7 @@ cp .env.example .env
 npm run dev
 ```
 
-Open http://localhost:3000. Public templates are `/demo/atelier` and `/demo/form`. Google-only merchant sign-in is `/login`; merchant workspace `/workspace`; owner console `/owner`. Real stores use `/s/{slug}` and `/s/{slug}/admin`. Without Google credentials, the landing page and read-only previews still work; platform sign-in clearly shows setup is pending.
+Open http://localhost:3000. Public templates are `/demo/gala`, `/demo/atelier` and `/demo/form`. Google-only merchant sign-in is `/login`; merchant workspace `/workspace`; owner console `/owner`. Real stores use `/s/{slug}` and `/s/{slug}/admin`. Without Google credentials, the landing page and read-only previews still work; platform sign-in clearly shows setup is pending.
 
 For an editable **local review only**, run `npm run build` then `npm run review:form`. Open http://127.0.0.1:3001/s/form-review. The dashboard password is `local-review-only-123`. This fixture stores demonstration inventory and test accounts under `output/review-data`, separate from production data. Never deploy the review script.
 
@@ -52,3 +52,5 @@ The platform subscription pays for the merchant's VÉRA store. It is separate fr
 FORM adds a separate modern, bilingual storefront with catalog search, variant filters, collections, saved items, shopper accounts, guest tracking, verified purchase reviews and merchant-managed return/exchange requests. New FORM merchant stores start without demonstration inventory. Template choice is made at creation and cannot be switched in the dashboard. Read [FORM setup and contracts](docs/FORM-IMPLEMENTATION.md) and [Arabic quick start](docs/FORM-QUICKSTART-AR.md).
 
 See [validation](docs/VALIDATION.md) for the checks run and live-provider limitations.
+
+GALA is the first template at /demo/gala. It adds a luxury reference storefront and dedicated merchant studio with editable layouts, bilingual copy, collections, product options, bundles, customer messages, newsletter and moderated photo reviews. Read [GALA implementation](docs/GALA-IMPLEMENTATION.md) and [Arabic quick start](docs/GALA-QUICKSTART-AR.md).

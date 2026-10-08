@@ -1,3 +1,9 @@
+import {
+  galaSettings,
+  galaProducts,
+  galaCollections,
+  galaDemoTestimonials,
+} from "../../src/data/gala.js";
 import { productSeedTranslation } from "../../src/i18n/content.js";
 import { defaultSettings } from "../../src/data/settings.js";
 import { catalogue } from "../../src/data/products.js";
@@ -6,8 +12,32 @@ import { formDemoProducts } from "../../src/data/form-demo.js";
 // Add a versioned manifest here and register its matching UI renderer in src/templates/registry.jsx.
 export const templateRegistry = [
   {
-    id: "atelier",
+    id: "gala",
     version: 1,
+    name: "GALA",
+    nameAr: "غالا",
+    description:
+      "A complete luxury storefront. Editorial composition, considered commerce, and a studio of your own.",
+    descriptionAr:
+      "متجر فاخر بتفاصيل تحريرية وتجربة تسوق متكاملة واستوديو إدارة خاص بك.",
+    image: "/platform/assets/gala-storefront.png",
+    renderer: "gala",
+    languages: ["ar", "en"],
+    settings: galaSettings,
+    products: [],
+    previewProducts: galaProducts,
+    previewCollections: galaCollections,
+    previewSettings: {
+      ...galaSettings,
+      gala: { ...galaSettings.gala, testimonials: galaDemoTestimonials },
+    },
+    palette: ["#151414", "#f3f0ed", "#c23b6b", "#ffffff"],
+    tagline: "Every detail. Exceptionally yours.",
+    taglineAr: "كل تفصيلة. استثنائية مثلك.",
+  },
+  {
+    id: "atelier",
+    version: 2,
     name: "The Atelier",
     nameAr: "أتيليه",
     description: "An editorial boutique for considered brands.",
@@ -50,5 +80,13 @@ for (const template of templateRegistry) {
 if (new Set(templateRegistry.map((t) => t.id)).size !== templateRegistry.length)
   throw new Error("Duplicate template identity");
 export const publicTemplates = templateRegistry.map(
-  ({ settings, products, previewProducts, ...manifest }) => manifest,
+  ({
+    settings,
+    products,
+    previewProducts,
+    previewSettings,
+    previewCollections,
+    collections,
+    ...manifest
+  }) => manifest,
 );

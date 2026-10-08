@@ -65,6 +65,7 @@ const withPrices = (product) => ({
 });
 export async function getProducts({
   offset = 0,
+  limit = 24,
   ids,
   search = "",
   category = "",
@@ -76,12 +77,13 @@ export async function getProducts({
   min_price = "",
   max_price = "",
   in_stock = "",
+  rating = "",
   signal,
 } = {}) {
   const data = await api(
     ids
       ? `/products?ids=${encodeURIComponent(ids.join(","))}`
-      : `/products?${new URLSearchParams({ offset, search, category, collection, sort, colors, sizes, materials, min_price, max_price, in_stock })}`,
+      : `/products?${new URLSearchParams({ offset, limit, search, category, collection, sort, colors, sizes, materials, min_price, max_price, in_stock, rating })}`,
     { signal },
   );
   return {

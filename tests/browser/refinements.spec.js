@@ -83,7 +83,7 @@ test("mobile dashboard header hides downwards and returns upwards, desktop stays
   await page.setViewportSize({ width: 1440, height: 700 });
   await page.evaluate(() => window.scrollTo(0, 800));
   await expect(header).not.toHaveClass(/is-scroll-hidden/);
-  await expect(page.locator(".signature-mark")).toHaveText("B");
+  await expect(page.locator(".signature-mark")).toHaveText("V");
 });
 test("available style and quantity controls respect inventory and the existing bag", async ({
   page,

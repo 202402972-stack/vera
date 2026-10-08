@@ -1,3 +1,5 @@
+import {migrateAtelierImages} from './atelier-images.js';
+import { registerGala, validateGala } from './gala.js';
 import { registerCollections } from "./collections.js";
 import { registerRetail, currentShopper } from "./retail.js";
 import {
@@ -83,7 +85,7 @@ app.use(
         connectSrc: ["'self'"],
         objectSrc: ["'none'"],
         baseUri: ["'self'"],
-        frameAncestors: ["'none'"],
+        frameAncestors: ["'self'"],
         upgradeInsecureRequests:
           process.env.NODE_ENV === "production" ? [] : null,
       },
@@ -176,6 +178,7 @@ function admin(req, res, next) {
 registerCollections(app, admin);
 registerRetail(app, admin, limit);
 registerShopperPayments(app, admin, limit);
+registerGala(app, admin, limit);
 const publicSettings = () => {
   const store = getSetting("store");
   return {
@@ -280,6 +283,8 @@ app.get("/api/products", (req, res, next) => {
       variantRules.push(
         "(json_extract(v.value,'$.manage_inventory')=0 OR json_extract(v.value,'$.inventory_quantity')>0)",
       );
+    if(req.query.in_stock === "0") conditions.push("NOT EXISTS(SELECT 1 FROM json_each(products.data,'$.variants') v WHERE json_extract(v.value,'$.manage_inventory')=0 OR json_extract(v.value,'$.inventory_quantity')>0)");
+    if(req.query.rating){const rating=Number(req.query.rating);if(!Number.isInteger(rating)||rating<1||rating>5)throw new HttpError("Invalid rating filter.");conditions.push("(SELECT AVG(r.rating) FROM retail_reviews r WHERE r.product_id=products.id AND r.status='approved')>=?");params.push(rating);}
     if (variantRules.length) {
       conditions.push(
         `EXISTS(SELECT 1 FROM json_each(products.data,'$.variants') v WHERE ${variantRules.join(" AND ")})`,
@@ -291,6 +296,8 @@ app.get("/api/products", (req, res, next) => {
       "price-desc": `${price} DESC,position,id`,
       newest: "products.rowid DESC",
       featured: "position,id",
+      "name-asc": "json_extract(data,'$.title') COLLATE NOCASE ASC,id",
+      "name-desc": "json_extract(data,'$.title') COLLATE NOCASE DESC,id",
     };
     const order = Object.hasOwn(sorts, req.query.sort)
       ? sorts[req.query.sort]
@@ -323,9 +330,11 @@ app.get("/api/categories", (_req, res) =>
       .map((r) => r.category),
   }),
 );
-app.get("/api/facets", (_req, res) => {
-  const products = productsAll().filter((p) => p.status === "published");
+app.get("/api/facets", (req, res) => {
+  const collection=req.query.collection ? getSetting('collections',[]).find(c=>c.id===req.query.collection&&c.published!==false) : null;
+  const products = productsAll().filter((p) => p.status === "published" && (!req.query.collection || collection?.productIds.includes(p.id)));
   res.json({
+    maxPriceInCents:products.reduce((max,p)=>Math.max(max,...p.variants.map(v=>v.sale_price_in_cents??v.price_in_cents)),0),
     colors: [
       ...new Set(
         products.flatMap((p) =>
@@ -483,6 +492,7 @@ app.get("/api/admin/store", admin, (_req, res) =>
 app.put("/api/admin/store", admin, (req, res, next) => {
   try {
     const settings = validateSettings(req.body);
+    if(getSetting("template")?.renderer === "gala") settings.gala = validateGala(req.body.gala);
     transaction(() => {
       const before = publicSettings();
       const version = getSetting("store_version", 1);
@@ -695,8 +705,9 @@ app.post(
       const hero = req.body.kind === "hero";
       const wide = req.body.kind === "wide";
       const logo = req.body.kind === "logo";
-      const width = logo ? 640 : wide ? 1800 : hero ? 1600 : 800,
-        height = logo ? 240 : wide ? 1200 : hero ? 1800 : 1000;
+      const original = req.body.kind === "original";
+      const width = original ? 1800 : logo ? 640 : wide ? 1800 : hero ? 1600 : 800,
+        height = original ? 1800 : logo ? 240 : wide ? 1200 : hero ? 1800 : 1000;
       const output = await sharp(req.file.buffer, {
         limitInputPixels: 40000000,
       })
@@ -704,7 +715,7 @@ app.post(
         .resize(
           width,
           height,
-          logo
+          logo || original
             ? { fit: "inside", withoutEnlargement: true }
             : { fit: "cover", position: "attention" },
         )
@@ -1336,6 +1347,8 @@ if (existsSync(dist)) {
       "/account",
       "/saved",
       "/cart",
+      "/collections",
+      "/track",
     ];
     const productId = req.path.startsWith("/product/") ? req.path.slice(9) : "";
     const valid =
@@ -1395,3 +1408,5 @@ if (
       });
     });
 }
+
+if(process.env.PLATFORM_MODE!=='1')migrateAtelierImages();

@@ -43,7 +43,10 @@ export default function CheckoutPage({ form = false }) {
     postalCode: "",
     country: "",
     location: "",
-    notes: "",
+    notes:
+      store._template?.renderer === "gala" && store.gala?.cart.notes
+        ? sessionStorage.getItem(storeKey("gala-note")) || ""
+        : "",
   });
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
@@ -190,6 +193,8 @@ export default function CheckoutPage({ form = false }) {
       track("order_created", result.order.number, result.order.total_in_cents);
       flush();
       clearCart();
+      if (store._template?.renderer === "gala")
+        sessionStorage.removeItem(storeKey("gala-note"));
       if (result.payment_url) {
         window.location.assign(result.payment_url);
         return;

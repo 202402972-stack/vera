@@ -167,16 +167,20 @@ export function ImagePicker({
       <div className="flex-1">
         <strong className="text-sm">{label}</strong>
         <p className="admin-hint my-2">
-          {kind === "logo"
-            ? "Transparent PNG or WebP recommended. Your logo keeps its proportions, up to 640 × 240 px."
-              : kind === 'wide'
-                ? 'Recommended: 1,800 × 1,200 px (3:2). Adjust the desktop and mobile focal positions in Store design.'
-              : kind === "hero"
-              ? "Recommended: 1,600 × 1,800 px. Keep the subject centred; the existing responsive hero crops the image to fill its panel."
-              : "800 × 1,000 px (4:5 portrait). Used in cards, product gallery, cart and order receipts."}{" "}
-          {kind === "logo"
-            ? "JPG, PNG, WebP or AVIF, up to 10 MB. Logos are resized without cropping."
-            : "JPG, PNG, WebP or AVIF, up to 10 MB. Uploads are automatically cropped and compressed."}
+          {kind === "original"
+            ? "Original proportions, up to 1800 px. JPG, PNG, WebP or AVIF, up to 10 MB."
+            : kind === "logo"
+              ? "Transparent PNG or WebP recommended. Your logo keeps its proportions, up to 640 × 240 px."
+              : kind === "wide"
+                ? "Recommended: 1,800 × 1,200 px (3:2). Adjust the desktop and mobile focal positions in Store design."
+                : kind === "hero"
+                  ? "Recommended: 1,600 × 1,800 px. Keep the subject centred; the existing responsive hero crops the image to fill its panel."
+                  : "800 × 1,000 px (4:5 portrait). Used in cards, product gallery, cart and order receipts."}{" "}
+          {kind === "original"
+            ? "Images keep their original proportions without cropping."
+            : kind === "logo"
+              ? "JPG, PNG, WebP or AVIF, up to 10 MB. Logos are resized without cropping."
+              : "JPG, PNG, WebP or AVIF, up to 10 MB. Uploads are automatically cropped and compressed."}
         </p>
         <label htmlFor={id} className="admin-upload-button">
           {busy ? (

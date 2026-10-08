@@ -21,6 +21,11 @@ export function ensureRetailSchema() {
  CREATE TABLE IF NOT EXISTS retail_reviews(id INTEGER PRIMARY KEY,customer_id INTEGER NOT NULL REFERENCES shoppers(id),order_id INTEGER NOT NULL REFERENCES orders(id),product_id TEXT NOT NULL,rating INTEGER NOT NULL,body TEXT NOT NULL,status TEXT NOT NULL DEFAULT 'pending',created TEXT NOT NULL,UNIQUE(order_id,product_id));
  CREATE TABLE IF NOT EXISTS retail_returns(id INTEGER PRIMARY KEY,customer_id INTEGER REFERENCES shoppers(id),order_id INTEGER NOT NULL REFERENCES orders(id),type TEXT NOT NULL,reason TEXT NOT NULL,status TEXT NOT NULL DEFAULT 'requested',note TEXT NOT NULL DEFAULT '',created TEXT NOT NULL,updated TEXT NOT NULL);
 `);
+  const columns = db.prepare("PRAGMA table_info(retail_reviews)").all();
+  if (!columns.some((x) => x.name === "metadata"))
+    db.exec(
+      "ALTER TABLE retail_reviews ADD COLUMN metadata TEXT NOT NULL DEFAULT '{}'",
+    );
 }
 ensureRetailSchema();
 function tokenFrom(req) {
@@ -342,8 +347,18 @@ export function registerRetail(app, admin, limit) {
   app.get("/api/retail/reviews/:id", (req, res) =>
     res.json({
       reviews: stmt(
-        "SELECT r.id,r.rating,r.body,r.created,c.name FROM retail_reviews r JOIN shoppers c ON c.id=r.customer_id WHERE r.product_id=? AND r.status='approved' ORDER BY r.id DESC LIMIT 100",
-      ).all(req.params.id),
+        "SELECT r.id,r.rating,r.body,r.created,r.metadata,c.name FROM retail_reviews r JOIN shoppers c ON c.id=r.customer_id WHERE r.product_id=? AND r.status='approved' ORDER BY r.id DESC LIMIT 100",
+      )
+        .all(req.params.id)
+        .map(({ metadata, ...review }) => {
+          const m = JSON.parse(metadata || "{}");
+          return {
+            ...review,
+            title: m.title || "",
+            images: m.images || [],
+            name: m.privateName ? "Anonymous" : m.displayName || review.name,
+          };
+        }),
     }),
   );
   app.post(
@@ -374,8 +389,33 @@ export function registerRetail(app, admin, limit) {
           ).get(row.id, req.body.productId)
         )
           throw new HttpError("You already reviewed this product.", 409);
+        const metadata = {
+          title: text(req.body.title || "", "Review title", 120, false),
+          displayName: text(
+            req.body.displayName || "",
+            "Display name",
+            80,
+            false,
+          ),
+          privateName: req.body.privateName === true,
+          images: [],
+        };
+        if (req.body.images !== undefined) {
+          if (!Array.isArray(req.body.images) || req.body.images.length > 3)
+            throw new HttpError("Attach up to three photos.");
+          for (const id of new Set(req.body.images)) {
+            if (
+              typeof id !== "string" ||
+              !stmt(
+                "SELECT id FROM gala_media WHERE id=? AND shopper_id=?",
+              ).get(id, req.shopper.id)
+            )
+              throw new HttpError("Invalid review photo.");
+            metadata.images.push(id);
+          }
+        }
         stmt(
-          "INSERT INTO retail_reviews(customer_id,order_id,product_id,rating,body,created) VALUES(?,?,?,?,?,?)",
+          "INSERT INTO retail_reviews(customer_id,order_id,product_id,rating,body,created,metadata) VALUES(?,?,?,?,?,?,?)",
         ).run(
           req.shopper.id,
           row.id,
@@ -383,6 +423,7 @@ export function registerRetail(app, admin, limit) {
           req.body.rating,
           text(req.body.body, "Review", 2000),
           new Date().toISOString(),
+          JSON.stringify(metadata),
         );
         res.status(201).json({ status: "pending" });
       } catch (e) {

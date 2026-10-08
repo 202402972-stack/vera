@@ -1,3 +1,4 @@
+import { StructuredField } from "@/templates/gala/StructuredField";
 import CollectionsPanel from "./CollectionsPanel";
 import { useSearchParams } from "react-router-dom";
 import { useUploads } from "./UploadContext";
@@ -193,7 +194,7 @@ export default function ProductsEditor({ notify }) {
   const visible = products.map((p) => localizeProduct(p, language));
   return localizeView(
     <div className="space-y-6">
-      {!editor && <CollectionsPanel/>}
+      {!editor && <CollectionsPanel />}
       {error && (
         <Notice error>
           {error}
@@ -568,6 +569,11 @@ export default function ProductsEditor({ notify }) {
                   </div>
                 </div>
                 <ImagePicker
+                  kind={
+                    store._template?.renderer === "gala"
+                      ? "original"
+                      : undefined
+                  }
                   label={
                     i === 0 ? "Cover photograph" : `Gallery photograph ${i + 1}`
                   }
@@ -590,6 +596,9 @@ export default function ProductsEditor({ notify }) {
             ))}
             {editor.images.length < 12 && (
               <ImagePicker
+                kind={
+                  store._template?.renderer === "gala" ? "original" : undefined
+                }
                 label={
                   editor.images.length
                     ? "Add another gallery image"
@@ -646,9 +655,51 @@ export default function ProductsEditor({ notify }) {
                     onChange={(value) => variantUpdate(i, "title", value)}
                     maxLength={60}
                     required
-                      hint="A colour, size or other option."
+                    hint="A colour, size or other option."
                   />
-                    {['color','size','material'].map(attribute=><Field key={attribute} label={language==='ar'?({color:'اللون',size:'المقاس',material:'الخامة'})[attribute]:attribute[0].toUpperCase()+attribute.slice(1)} value={v.attributes?.[attribute]||''} maxLength={60} onChange={value=>variantUpdate(i,'attributes',{...v.attributes,[attribute]:value})}/>)}
+                  {store._template?.renderer === "gala" && (
+                    <>
+                      <Field
+                        label={language === "ar" ? "رمز المنتج SKU" : "SKU"}
+                        value={v.sku || ""}
+                        onChange={(value) => variantUpdate(i, "sku", value)}
+                      />
+                      <StructuredField
+                        label={
+                          language === "ar"
+                            ? "خيارات المقاس واللون"
+                            : "Option names & values"
+                        }
+                        path="optionValues"
+                        value={v.optionValues || []}
+                        onChange={(value) =>
+                          variantUpdate(i, "optionValues", value)
+                        }
+                      />
+                    </>
+                  )}
+                  {["color", "size", "material"].map((attribute) => (
+                    <Field
+                      key={attribute}
+                      label={
+                        language === "ar"
+                          ? {
+                              color: "اللون",
+                              size: "المقاس",
+                              material: "الخامة",
+                            }[attribute]
+                          : attribute[0].toUpperCase() + attribute.slice(1)
+                      }
+                      value={v.attributes?.[attribute] || ""}
+                      maxLength={60}
+                      onChange={(value) =>
+                        variantUpdate(i, "attributes", {
+                          ...v.attributes,
+                          [attribute]: value,
+                        })
+                      }
+                    />
+                  ))}
                   <Field
                     label="Price"
                     type="number"
@@ -746,6 +797,32 @@ export default function ProductsEditor({ notify }) {
               <Plus size={16} className="mr-2" /> Add style / size
             </Button>
           </Panel>
+          {store._template?.renderer === "gala" && (
+            <Panel
+              title={
+                language === "ar"
+                  ? "اختيارات المنتجات المرتبطة"
+                  : "GALA merchandising"
+              }
+              subtitle={
+                language === "ar"
+                  ? "أدخل معرّفات المنتجات للروابط والمجموعات."
+                  : "Use product IDs to choose related products, bundles and recommendations."
+              }
+            >
+              <StructuredField
+                path="merchandising"
+                value={
+                  editor.merchandising || {
+                    relatedIds: [],
+                    bundleIds: [],
+                    recommendedIds: [],
+                  }
+                }
+                onChange={(v) => update("merchandising", v)}
+              />
+            </Panel>
+          )}
           <Panel
             title="Extra product details"
             subtitle="Add material, dimensions, care instructions or other information. Shown below the purchase area."

@@ -14,7 +14,8 @@
     "test:e2e": "playwright test",
     "format": "prettier --write server src/components/admin scripts tests playwright.config.js",
     "benchmark": "node scripts/benchmark.js",
-    "test:platform:e2e": "playwright test -c playwright.platform.config.js"
+    "test:platform:e2e": "playwright test -c playwright.platform.config.js",
+    "review:gala": "node scripts/review-gala.mjs"
   },
   "dependencies": {
     "@napi-rs/canvas": "^1.0.10",

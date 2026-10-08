@@ -1,3 +1,4 @@
+import { storeUrl } from "@/lib/store-scope";
 import React, { useEffect, useState, useCallback } from "react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { api, jsonRequest } from "@/api/store";
@@ -112,6 +113,34 @@ export default function RetailPanel({ kind, notify }) {
                         ? `${row.rating}/5 · ${row.body}`
                         : row.reason}
                     </p>
+                    {kind === "reviews" && row.metadata && (
+                      <div>
+                        {JSON.parse(row.metadata).title && (
+                          <strong>{JSON.parse(row.metadata).title}</strong>
+                        )}
+                        <small>
+                          {JSON.parse(row.metadata).privateName
+                            ? t("Name hidden publicly", "الاسم مخفي للعامة")
+                            : JSON.parse(row.metadata).displayName}
+                        </small>
+                        <div className="flex gap-2 flex-wrap">
+                          {(JSON.parse(row.metadata).images || []).map((id) => (
+                            <a
+                              key={id}
+                              href={storeUrl("/api/admin/review-image/" + id)}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              <img
+                                src={storeUrl("/api/admin/review-image/" + id)}
+                                alt={t("Review attachment", "صورة التقييم")}
+                                className="w-24 h-24 object-cover"
+                              />
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                     <span className="studio-status">
                       {statusLabels[row.status] || row.status}
                     </span>

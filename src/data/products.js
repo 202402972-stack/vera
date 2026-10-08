@@ -63,13 +63,13 @@ const products = [
   },
 ];
 
-const placeholder = (color, label) => {
+export const atelierPlaceholder = (color, label) => {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1000" viewBox="0 0 800 1000"><rect width="800" height="1000" fill="${color}"/><text x="400" y="510" font-family="Georgia,serif" font-size="44" fill="#ffffff" fill-opacity="0.85" text-anchor="middle">${label}</text></svg>`;
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 };
 
 export const catalogue = products.map((p) => {
-  const image = placeholder(p.color, p.title);
+  const image = '/assets/atelier-'+p.id+'.jpg';
   return {
     id: p.id,
     title: p.title,
@@ -96,3 +96,5 @@ export const catalogue = products.map((p) => {
     })),
   };
 });
+
+export const atelierOriginalImages = Object.fromEntries(products.map(p => [p.id, atelierPlaceholder(p.color, p.title)]));

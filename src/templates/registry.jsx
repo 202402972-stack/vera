@@ -1,6 +1,7 @@
 import React, { lazy, Suspense } from "react";
 import { useStore } from "@/hooks/useStore";
 const renderers = {
+  gala: lazy(() => import("./gala/GalaApp.jsx")),
   boutique: lazy(() => import("@/App.jsx")),
   form: lazy(() => import("./form/FormApp.jsx")),
 };

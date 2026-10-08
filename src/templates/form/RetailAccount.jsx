@@ -1,3 +1,4 @@
+import { useStore } from "@/hooks/useStore";
 import React, { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { api, jsonRequest, formatCurrency } from "@/api/store";
@@ -337,6 +338,8 @@ export default function RetailAccount() {
   );
 }
 function Order({ order, guest = false, busy, act, refresh, notify }) {
+  const { store } = useStore(),
+    isGala = store._template?.renderer === "gala";
   const t = useCopy(),
     [action, setAction] = useState(""),
     money = (v) =>
@@ -432,8 +435,37 @@ function Order({ order, guest = false, busy, act, refresh, notify }) {
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                const data = Object.fromEntries(new FormData(e.currentTarget));
+                const fields = new FormData(e.currentTarget);
+                const data = Object.fromEntries(fields);
+                const photos = fields
+                  .getAll("photos")
+                  .filter((f) => f instanceof File && f.size);
+                delete data.photos;
                 act(async () => {
+                  if (action === "review" && photos.length) {
+                    if (photos.length > 3)
+                      throw new Error(
+                        t(
+                          "Attach up to three photos.",
+                          "أرفق ثلاث صور كحد أقصى.",
+                        ),
+                      );
+                    data.images = [];
+                    for (const photo of photos) {
+                      const body = new FormData();
+                      body.append("image", photo);
+                      data.images.push(
+                        (
+                          await api("/retail/review-image", {
+                            method: "POST",
+                            body,
+                          })
+                        ).id,
+                      );
+                    }
+                  }
+                  if (action === "review")
+                    data.privateName = data.privateName === "on";
                   await api(
                     "/retail/" + (action === "review" ? "reviews" : "returns"),
                     jsonRequest("POST", {
@@ -478,6 +510,34 @@ function Order({ order, guest = false, busy, act, refresh, notify }) {
                     {t("Your review", "رأيك")}
                     <textarea name="body" required maxLength={2000} />
                   </label>
+                  {isGala && (
+                    <>
+                      <label>
+                        {t("Review title", "عنوان التقييم")}
+                        <input name="title" maxLength={120} />
+                      </label>
+                      <label>
+                        {t("Display name (optional)", "اسم العرض (اختياري)")}
+                        <input name="displayName" maxLength={80} />
+                      </label>
+                      <label>
+                        {t("Hide my name", "إخفاء اسمي")}
+                        <input name="privateName" type="checkbox" />
+                      </label>
+                      <label>
+                        {t(
+                          "Photos (up to 3, 5 MB each)",
+                          "الصور (حتى ٣ صور، ٥ ميجابايت لكل صورة)",
+                        )}
+                        <input
+                          name="photos"
+                          type="file"
+                          multiple
+                          accept="image/jpeg,image/png,image/webp,image/avif"
+                        />
+                      </label>
+                    </>
+                  )}
                   <small>
                     {t(
                       "Reviews are published after moderation.",

@@ -170,7 +170,7 @@ for (const locale of ["en", "ar"]) {
       }
       await expect(page.locator(".admin-tabs")).toBeVisible();
       const tabs = await page.locator(".admin-tab").all();
-      expect(tabs).toHaveLength(9);
+      expect(tabs).toHaveLength(13);
       for (const tab of tabs) {
         const r = await tab.boundingBox();
         expect(r.x).toBeGreaterThanOrEqual(0);

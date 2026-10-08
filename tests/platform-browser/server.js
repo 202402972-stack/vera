@@ -43,3 +43,10 @@ for (const signal of ["SIGTERM", "SIGINT"])
       process.exit(0);
     }),
   );
+// Separate merchant for GALA integration checks; existing fixture accounts stay unchanged.
+const {inTenant}=await import('../../server/tenant.js');
+const db=await import('../../server/db.js');
+const {galaProducts,galaCollections}=await import('../../src/data/gala.js');
+sql('INSERT INTO platform_users(sub,email,name,created) VALUES(?,?,?,?)').run('gala-browser','gala-browser@example.test','GALA test',Date.now());
+const gala=provision(sql('SELECT * FROM platform_users WHERE sub=?').get('gala-browser'),{name:'GALA browser',slug:'gala-browser',template:'gala',password:'test-private-password-123'});
+inTenant(gala.id,gala.url,()=>{for(const[i,p]of galaProducts.entries()){db.stmt('INSERT INTO products(id,data,position) VALUES(?,?,?)').run(p.id,JSON.stringify(p),i);db.indexProductVariants(p);}db.setSetting('collections',galaCollections);});

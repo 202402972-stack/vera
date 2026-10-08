@@ -1,3 +1,5 @@
+import { migrateAtelierImages } from "../atelier-images.js";
+import { ensureGalaSchema } from "../gala.js";
 import { randomBytes, createHash, scryptSync } from "node:crypto";
 import {
   rawDb,
@@ -8,7 +10,7 @@ import {
   indexProductVariants,
 } from "../db.js";
 import { inTenant, tenantSQL } from "../tenant.js";
-import { ensureRetailSchema } from '../retail.js';
+import { ensureRetailSchema } from "../retail.js";
 export const hash = (v) => createHash("sha256").update(v).digest("hex");
 export const token = () => randomBytes(32).toString("base64url");
 export const sql = (q) => rawDb.prepare(q);
@@ -26,6 +28,8 @@ CREATE TABLE IF NOT EXISTS platform_audit(id INTEGER PRIMARY KEY,actor INTEGER,a
 CREATE TABLE IF NOT EXISTS platform_billing_events(id TEXT PRIMARY KEY,at INTEGER NOT NULL);
 `);
 const tableNames = [
+  "gala_messages",
+  "gala_media",
   "settings",
   "products",
   "orders",
@@ -36,7 +40,10 @@ const tableNames = [
   "order_history",
   "subscribers",
   "variant_lookup",
-  "shoppers", "shopper_sessions", "retail_reviews", "retail_returns",
+  "shoppers",
+  "shopper_sessions",
+  "retail_reviews",
+  "retail_returns",
 ];
 const schema = sql(
   "SELECT name,tbl_name,sql,type FROM sqlite_master WHERE sql IS NOT NULL AND type IN ('table','index') ORDER BY CASE type WHEN 'table' THEN 0 ELSE 1 END",
@@ -44,7 +51,12 @@ const schema = sql(
   .all()
   .filter((r) => tableNames.includes(r.tbl_name));
 const indexes = schema.filter((r) => r.type === "index").map((r) => r.name);
-for (const store of sql('SELECT id,slug FROM platform_stores').all()) inTenant(store.id,`/s/${store.slug}`,ensureRetailSchema);
+for (const store of sql("SELECT id,slug,template FROM platform_stores").all())
+  inTenant(store.id, `/s/${store.slug}`, () => {
+    ensureRetailSchema();
+    ensureGalaSchema();
+    if (store.template === "atelier") migrateAtelierImages();
+  });
 export const owner = (user) =>
   !!user &&
   (process.env.OWNER_EMAILS || "")
@@ -159,6 +171,8 @@ function initializeTenant(id, base, definition, name, password) {
     });
     setSetting("store", settings);
     setSetting("store_version", 1);
+    if (definition.collections)
+      setSetting("collections", structuredClone(definition.collections));
     setPassword(password);
     for (const p of definition.products) {
       const { _version, ...data } = p;
@@ -186,7 +200,11 @@ export function ensurePreviews() {
     const existing = sql("SELECT * FROM platform_templates WHERE id=?").get(
       definition.id,
     );
-    if(existing) inTenant(existing.preview_id,`/demo/${definition.id}`,ensureRetailSchema);
+    if (existing)
+      inTenant(existing.preview_id, `/demo/${definition.id}`, () => {
+        ensureRetailSchema();
+        ensureGalaSchema();
+      });
     if (existing?.version === definition.version) continue;
     rawDb.exec("BEGIN IMMEDIATE");
     try {
@@ -198,7 +216,12 @@ export function ensurePreviews() {
       if (existing)
         inTenant(id, `/demo/${definition.id}`, () => {
           for (const table of [
-            "retail_reviews", "retail_returns", "shopper_sessions", "shoppers",
+            "gala_messages",
+            "gala_media",
+            "retail_reviews",
+            "retail_returns",
+            "shopper_sessions",
+            "shoppers",
             "order_history",
             "events",
             "visits",
@@ -215,7 +238,12 @@ export function ensurePreviews() {
       initializeTenant(
         id,
         `/demo/${definition.id}`,
-        {...definition,products:definition.previewProducts||definition.products},
+        {
+          ...definition,
+          settings: definition.previewSettings || definition.settings,
+          collections: definition.previewCollections || definition.collections,
+          products: definition.previewProducts || definition.products,
+        },
         definition.settings.name,
         token(),
       );

@@ -115,9 +115,52 @@ export function validateProduct(input, existingIds = new Set()) {
       inventory_quantity: stock,
       image_url: v.image_url ? imageUrl(v.image_url) : null,
       options: [],
+      sku: text(v.sku || "", "SKU", 100, false),
+      optionValues: (() => {
+        if (v.optionValues === undefined) return [];
+        if (
+          !Array.isArray(v.optionValues) ||
+          v.optionValues.length > 3 ||
+          v.optionValues.some(
+            (o) => !o || typeof o !== "object" || Array.isArray(o),
+          )
+        )
+          throw new HttpError("Provide up to three named option values.");
+        const options = v.optionValues.map((o) => ({
+          name: text(o.name, "Option name", 40),
+          value: text(o.value, "Option value", 60),
+        }));
+        if (new Set(options.map((o) => o.name)).size !== options.length)
+          throw new HttpError("Option names must be unique in each variant.");
+        return options;
+      })(),
       attributes,
     };
   });
+  const optionNames = [
+    ...new Set(variants.flatMap((v) => v.optionValues.map((o) => o.name))),
+  ].sort();
+  if (optionNames.length) {
+    if (
+      variants.some(
+        (v) =>
+          v.optionValues.length !== optionNames.length ||
+          optionNames.some(
+            (name) => !v.optionValues.some((o) => o.name === name),
+          ),
+      )
+    )
+      throw new HttpError("Use the same option names in every variant.");
+    const combinations = variants.map((v) =>
+      JSON.stringify(
+        optionNames.map(
+          (name) => v.optionValues.find((o) => o.name === name).value,
+        ),
+      ),
+    );
+    if (new Set(combinations).size !== combinations.length)
+      throw new HttpError("Each option combination must be unique.");
+  }
   if (
     !Array.isArray(input.images) ||
     !input.images.length ||
@@ -154,6 +197,18 @@ export function validateProduct(input, existingIds = new Set()) {
     status: input.status === "draft" ? "draft" : "published",
     variants,
     options: [],
+    merchandising: Object.fromEntries(
+      ["relatedIds", "bundleIds", "recommendedIds"].map((k) => [
+        k,
+        Array.isArray(input.merchandising?.[k])
+          ? [...new Set(input.merchandising[k])].slice(0, 20).map((id) => {
+              if (typeof id !== "string" || !/^[a-z0-9-]{1,100}$/.test(id))
+                throw new HttpError("Invalid product selection.");
+              return id;
+            })
+          : [],
+      ]),
+    ),
     additional_info: (input.additional_info || []).map((info, i) => ({
       id: `${id}-info-${i}`,
       order: i,
