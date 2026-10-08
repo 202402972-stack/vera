@@ -8,3 +8,10 @@ dist/
 test-results/
 playwright-report/
 screenshots/
+output/
+.playwright-cli/
+*.log
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+.encryption-key

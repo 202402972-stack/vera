@@ -36,7 +36,7 @@ export default function AdminLogin({
             lang="en"
             aria-hidden="true"
           >
-            B
+            {store._template?.renderer === "form" ? "V" : "B"}
           </span>
           <span>{store.name}</span>
         </div>
@@ -46,13 +46,18 @@ export default function AdminLogin({
           <p>Your collection. Your identity. Your next chapter.</p>
         </div>
         <span className="login-edition" dir="ltr" lang="en">
-          BOUTIQUE — MADE WITH CARE
+          {store._template?.renderer === "form"
+            ? "VÉRA — MERCHANT STUDIO"
+            : "BOUTIQUE — MADE WITH CARE"}
         </span>
       </section>
       <section className="login-workspace">
         <div className="login-topbar">
           <Link to="/">
-            <ArrowLeft size={15} /> Back to boutique
+            <ArrowLeft size={15} />{" "}
+            {store._template?.renderer === "form"
+              ? "View store"
+              : "Back to boutique"}
           </Link>
           <button
             type="button"

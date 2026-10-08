@@ -7,7 +7,9 @@ let queue = [],
   duration = 0,
   metadata = {};
 const allowed = () =>
-  navigator.doNotTrack !== "1" && !navigator.globalPrivacyControl;
+  !storeBase.startsWith("/demo/") &&
+  navigator.doNotTrack !== "1" &&
+  !navigator.globalPrivacyControl;
 const visibleDuration = () =>
   duration + (visibleSince === null ? 0 : Date.now() - visibleSince);
 function identity() {
@@ -16,9 +18,12 @@ function identity() {
   if (session && now - lastActivity < 1800000) return true;
   if (session) flush(true);
   try {
-    visitor = localStorage.getItem(storeKey("store-visitor")) || crypto.randomUUID();
+    visitor =
+      localStorage.getItem(storeKey("store-visitor")) || crypto.randomUUID();
     localStorage.setItem(storeKey("store-visitor"), visitor);
-    const prior = JSON.parse(sessionStorage.getItem(storeKey("store-visit")) || "null");
+    const prior = JSON.parse(
+      sessionStorage.getItem(storeKey("store-visit")) || "null",
+    );
     const resumed = prior && now - prior.at < 1800000;
     session = resumed ? prior.id : crypto.randomUUID();
     duration = resumed ? Number(prior.duration) || 0 : 0;

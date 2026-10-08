@@ -293,7 +293,7 @@ export default function AnalyticsPanel({ compact = false }) {
       "Collected revenue",
       collectedValue,
       BanknoteIcon,
-      "Delivered orders only",
+      "Delivered COD and verified online payments",
     ],
     [
       "Conversion rate",

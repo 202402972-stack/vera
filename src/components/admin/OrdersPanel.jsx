@@ -23,6 +23,10 @@ import { Button } from "@/components/ui/button";
 import { Panel, Field, Notice, Busy, SaveButton } from "./AdminUI";
 export default function OrdersPanel({ notify }) {
   const { t, date, language } = useLanguage();
+  const paymentLabel = (order) =>
+    order.payment_method === "paymob"
+      ? `Paymob · ${{ pending: t("Awaiting payment"), paid: t("Paid"), failed: t("Payment failed"), expired: t("Payment expired"), refunded: t("Refunded"), received_after_cancellation: t("Payment received; contact the store") }[order.payment_status] || order.payment_status || t("Awaiting payment")}`
+      : t("Cash on delivery");
   const [params, setParams] = useSearchParams();
   const orderId = params.get("order");
   const [data, setData] = useState(null),
@@ -248,7 +252,7 @@ export default function OrdersPanel({ notify }) {
                   <td className="whitespace-nowrap">
                     {money(o.total_in_cents, o)}
                     <p className="text-[10px] text-muted-foreground">
-                      Cash on delivery
+                      {paymentLabel(o)}
                     </p>
                   </td>
                   <td>
@@ -395,7 +399,7 @@ export default function OrdersPanel({ notify }) {
               <div className="bg-muted rounded-xl p-4">
                 <h3 className="text-xl mb-3">Payment & notification</h3>
                 <p className="text-sm flex items-center gap-2">
-                  <Banknote size={16} /> Cash on delivery
+                  <Banknote size={16} /> {paymentLabel(selected)}
                 </p>
                 <p className="text-xs text-muted-foreground mt-3">
                   {selected.delivery_note}

@@ -1,3 +1,16 @@
+# VÉRA 2.1.0 — 2026-10-08
+
+- Add FORM as an independent bilingual storefront while preserving Atelier and the shared store engine.
+- Add configurable campaign media and mobile framing, collections imagery, catalog filters and variant attributes.
+- Add tenant-scoped shopper accounts, persisted saved items, guest order claims, verified reviews, return requests and one-time account recovery.
+- Add separate encrypted merchant Paymob checkout, signed/canonical confirmation, inventory-safe idempotency, expiry and reconciliation.
+- Improve the green/ivory dashboard and add design, customers, reviews, returns and payments workspaces.
+- Display both templates with their actual previews and colors on the landing page; retain template choice through creation.
+- Preserve template identity in versioned settings responses and distinguish collected COD from verified online payments in analytics.
+- Include an isolated editable local review fixture, Arabic startup guide, licensed local fonts and illustrative preview assets.
+
+---
+
 # VÉRA 2.0.0 — 2026-10-07
 
 - Add the VÉRA marketing, Google login, customer workspace, owner console and template registry above the original boutique.

@@ -6,16 +6,18 @@ import { Link, useLocation } from "react-router-dom";
 import { useStore } from "@/hooks/useStore";
 import { api, formatCurrency } from "@/api/store";
 import { motion } from "framer-motion";
-import { CheckCircle, Package, ArrowRight } from "lucide-react";
+import { CheckCircle, Clock, Package, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Header from "@/components/Header.jsx";
 import Footer from "@/components/Footer.jsx";
-const SuccessPage = () => {
+const SuccessPage = ({ form = false }) => {
+  const ContentTag = form ? "section" : "main";
   const { t, date, language } = useLanguage();
   const { store } = useStore();
   const location = useLocation();
   const [order, setOrder] = useState(null);
   const [error, setError] = useState("");
+  const [paying, setPaying] = useState(false);
   useEffect(() => {
     let saved = "";
     try {
@@ -53,7 +55,9 @@ const SuccessPage = () => {
   return localizeView(
     <>
       <Helmet>
-        <title>Order Confirmed - {store.name}</title>
+        <title>
+          {language === "ar" ? "حالة الطلب" : "Order status"} - {store.name}
+        </title>
         <meta name="robots" content="noindex,nofollow" />
         <meta
           name="description"
@@ -61,9 +65,9 @@ const SuccessPage = () => {
         />
       </Helmet>
 
-      <Header />
+      {!form && <Header />}
 
-      <main
+      <ContentTag
         id="main-content"
         tabIndex={-1}
         className="min-h-[70vh] flex items-center justify-center px-4 py-20"
@@ -97,7 +101,13 @@ const SuccessPage = () => {
             }}
             className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-primary/10 mb-8"
           >
-            {order && <CheckCircle className="h-12 w-12 text-primary" />}
+            {order &&
+              (order.payment_method === "paymob" &&
+              order.payment_status !== "paid" ? (
+                <Clock className="h-12 w-12 text-primary" />
+              ) : (
+                <CheckCircle className="h-12 w-12 text-primary" />
+              ))}
           </motion.div>
 
           <motion.h1
@@ -114,7 +124,12 @@ const SuccessPage = () => {
             className="text-4xl md:text-5xl font-semibold mb-6 text-foreground"
           >
             {order
-              ? "Thank you for your purchase"
+              ? order.payment_method === "paymob" &&
+                order.payment_status !== "paid"
+                ? language === "ar"
+                  ? "حالة الدفع والطلب"
+                  : "Order & payment status"
+                : "Thank you for your purchase"
               : error
                 ? "Order confirmation"
                 : "Loading your order…"}
@@ -166,8 +181,70 @@ const SuccessPage = () => {
                   </span>
                 </div>
                 <p className="text-muted-foreground">
-                  Cash on delivery · {order.status}
+                  {order.payment_method === "paymob"
+                    ? language === "ar"
+                      ? "الدفع الإلكتروني"
+                      : "Online payment"
+                    : t("Cash on delivery")}{" "}
+                  ·{" "}
+                  {order.payment_method === "paymob"
+                    ? {
+                        pending: t("Awaiting payment"),
+                        paid: t("Paid"),
+                        failed: t("Payment failed"),
+                        expired: t("Payment expired"),
+                        refunded: t("Refunded"),
+                        received_after_cancellation: t(
+                          "Payment received; contact the store",
+                        ),
+                      }[order.payment_status] || order.payment_status
+                    : t(order.status)}
                 </p>
+                {order.payment_method === "paymob" &&
+                  order.payment_status === "pending" &&
+                  order.status !== "cancelled" && (
+                    <div className="p-4 border rounded-lg">
+                      <p>
+                        {language === "ar"
+                          ? "الدفع لم يتأكد بعد. لا تُعدّ العودة من صفحة الدفع تأكيدًا. احتفظ برابط الإيصال الآمن لمتابعة الحالة."
+                          : "Payment has not been confirmed yet. Keep this secure receipt link to check its status."}
+                      </p>
+                      <Button
+                        className="mt-4"
+                        disabled={paying}
+                        onClick={async () => {
+                          setPaying(true);
+                          try {
+                            const result = await api("/payments/resume", {
+                              method: "POST",
+                              body: JSON.stringify({
+                                token:
+                                  location.hash.slice(1) ||
+                                  sessionStorage.getItem(
+                                    storeKey("last-receipt"),
+                                  ),
+                              }),
+                            });
+                            if (result.payment_url)
+                              window.location.assign(result.payment_url);
+                          } catch (e) {
+                            setError(e.message);
+                          } finally {
+                            setPaying(false);
+                          }
+                        }}
+                      >
+                        {language === "ar"
+                          ? "متابعة الدفع"
+                          : "Continue payment"}
+                      </Button>
+                      {error && (
+                        <p role="alert" className="mt-3">
+                          {error}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 {order.status !== "cancelled" && (
                   <ol
                     className="order-timeline"
@@ -253,7 +330,14 @@ const SuccessPage = () => {
                   )}
                   <p>Delivery: {money(order.shipping_in_cents)}</p>
                   <p className="font-semibold text-lg">
-                    Total due on delivery: {money(order.total_in_cents)}
+                    {order.payment_method === "paymob"
+                      ? t(
+                          order.payment_status === "paid"
+                            ? "Total paid"
+                            : "Order total",
+                        )
+                      : t("Total due on delivery")}
+                    : {money(order.total_in_cents)}
                   </p>
                 </div>
                 <div className="border-t border-border pt-4">
@@ -265,8 +349,14 @@ const SuccessPage = () => {
                     <br />
                     {order.customer.address}
                     <br />
-                    {order.customer.city}, {order.customer.region}{" "}
-                    {order.customer.postalCode}, {order.customer.country}
+                    {[
+                      order.customer.city,
+                      order.customer.region,
+                      order.customer.postalCode,
+                      order.customer.country,
+                    ]
+                      .filter(Boolean)
+                      .join(", ")}
                   </p>
                   {order.customer.location && (
                     <a
@@ -321,9 +411,9 @@ const SuccessPage = () => {
             </Button>
           </motion.div>
         </motion.div>
-      </main>
+      </ContentTag>
 
-      <Footer />
+      {!form && <Footer />}
     </>,
     t,
   );

@@ -1,4 +1,10 @@
-import {registerCollections} from "./collections.js";
+import { registerCollections } from "./collections.js";
+import { registerRetail, currentShopper } from "./retail.js";
+import {
+  registerShopperPayments,
+  paymentsReady,
+  beginShopperPayment,
+} from "./shopper-payments.js";
 import { tenantId, tenantPath, adminCookie } from "./tenant.js";
 import { resolveBrand, defaultCommerce } from "../src/data/brand.js";
 import { priceCart, quoteTotals, validateDiscount } from "./commerce.js";
@@ -61,7 +67,10 @@ import {
 export const app = express();
 app.set("trust proxy", 1);
 app.disable("x-powered-by");
-app.use("/api/admin",(_req,res,next)=>{res.set("Cache-Control","no-store");next();});
+app.use("/api/admin", (_req, res, next) => {
+  res.set("Cache-Control", "no-store");
+  next();
+});
 app.use(
   helmet({
     contentSecurityPolicy: {
@@ -139,7 +148,8 @@ if (!savedPasswordSalt) {
 }
 const passwordSalt = Buffer.from(savedPasswordSalt, "hex");
 if (
-  process.env.NODE_ENV === "production" && !process.env.PLATFORM_MODE &&
+  process.env.NODE_ENV === "production" &&
+  !process.env.PLATFORM_MODE &&
   (!process.env.ADMIN_PASSWORD ||
     process.env.ADMIN_PASSWORD === "admin@admin" ||
     process.env.ADMIN_PASSWORD.length < 12)
@@ -163,12 +173,14 @@ function admin(req, res, next) {
     return res.status(401).json({ error: "Please sign in to the dashboard." });
   next();
 }
-registerCollections(app,admin);
+registerCollections(app, admin);
+registerRetail(app, admin, limit);
+registerShopperPayments(app, admin, limit);
 const publicSettings = () => {
   const store = getSetting("store");
   return {
     ...store,
-    ...(tenantId() ? {_template:getSetting("template")} : {}),
+    ...(tenantId() ? { _template: getSetting("template") } : {}),
     brand: resolveBrand(store.brand),
     commerce: { ...defaultCommerce, ...store.commerce },
   };
@@ -184,7 +196,7 @@ app.get("/api/health", (_req, res) => {
   res.json({ ok: true });
 });
 app.get("/api/store", (_req, res) => res.json(publicSettings()));
-app.get("/api/admin/bootstrap", (_req,res) => res.json(publicSettings()));
+app.get("/api/admin/bootstrap", (_req, res) => res.json(publicSettings()));
 app.get("/api/products", (req, res, next) => {
   try {
     if (req.query.ids !== undefined) {
@@ -218,12 +230,62 @@ app.get("/api/products", (req, res, next) => {
       params.push(category);
     }
     if (req.query.collection) {
-      const collection=getSetting('collections',[]).find(c=>c.id===req.query.collection&&c.published);
-      if(!collection) throw new HttpError('Collection not found.',404);
-      if(collection.productIds.length){conditions.push(`id IN (${collection.productIds.map(()=>'?').join(',')})`);params.push(...collection.productIds);}else conditions.push('0');
+      const collection = getSetting("collections", []).find(
+        (c) => c.id === req.query.collection && c.published,
+      );
+      if (!collection) throw new HttpError("Collection not found.", 404);
+      if (collection.productIds.length) {
+        conditions.push(
+          `id IN (${collection.productIds.map(() => "?").join(",")})`,
+        );
+        params.push(...collection.productIds);
+      } else conditions.push("0");
     }
     const price =
       "(SELECT MIN(COALESCE(json_extract(v.value,'$.sale_price_in_cents'),json_extract(v.value,'$.price_in_cents'))) FROM json_each(products.data,'$.variants') v)";
+    const variantRules = [],
+      variantParams = [];
+    for (const [queryKey, attribute] of [
+      ["colors", "color"],
+      ["sizes", "size"],
+      ["materials", "material"],
+    ])
+      if (req.query[queryKey]) {
+        const values = String(req.query[queryKey]).split("|");
+        if (values.length > 20 || values.some((v) => !v || v.length > 60))
+          throw new HttpError("Invalid product filters.");
+        variantRules.push(
+          `json_extract(v.value,'$.attributes.${attribute}') IN (${values.map(() => "?").join(",")})`,
+        );
+        variantParams.push(...values);
+      }
+    for (const [key, comparison] of [
+      ["min_price", ">="],
+      ["max_price", "<="],
+    ])
+      if (req.query[key]) {
+        const priceValue = Number(req.query[key]);
+        if (
+          !Number.isFinite(priceValue) ||
+          priceValue < 0 ||
+          priceValue > 1000000
+        )
+          throw new HttpError("Invalid price filter.");
+        variantRules.push(
+          `COALESCE(json_extract(v.value,'$.sale_price_in_cents'),json_extract(v.value,'$.price_in_cents')) ${comparison} ?`,
+        );
+        variantParams.push(Math.round(priceValue * 100));
+      }
+    if (req.query.in_stock === "1")
+      variantRules.push(
+        "(json_extract(v.value,'$.manage_inventory')=0 OR json_extract(v.value,'$.inventory_quantity')>0)",
+      );
+    if (variantRules.length) {
+      conditions.push(
+        `EXISTS(SELECT 1 FROM json_each(products.data,'$.variants') v WHERE ${variantRules.join(" AND ")})`,
+      );
+      params.push(...variantParams);
+    }
     const sorts = {
       "price-asc": `${price} ASC,position,id`,
       "price-desc": `${price} DESC,position,id`,
@@ -261,6 +323,37 @@ app.get("/api/categories", (_req, res) =>
       .map((r) => r.category),
   }),
 );
+app.get("/api/facets", (_req, res) => {
+  const products = productsAll().filter((p) => p.status === "published");
+  res.json({
+    colors: [
+      ...new Set(
+        products.flatMap((p) =>
+          p.variants.map((v) => v.attributes?.color).filter(Boolean),
+        ),
+      ),
+    ].sort(),
+    sizes: [
+      ...new Set(
+        products.flatMap((p) =>
+          p.variants.map((v) => v.attributes?.size).filter(Boolean),
+        ),
+      ),
+    ].sort(),
+    materials: [
+      ...new Set(
+        products.flatMap((p) =>
+          p.variants.map((v) => v.attributes?.material).filter(Boolean),
+        ),
+      ),
+    ].sort(),
+    categoryLabels: Object.fromEntries(
+      products
+        .filter((p) => p.category && p.translations?.ar?.category)
+        .map((p) => [p.category, p.translations.ar.category]),
+    ),
+  });
+});
 app.get("/api/products/:id", (req, res, next) => {
   const p = productById(req.params.id);
   if (!p || p.status !== "published")
@@ -301,8 +394,17 @@ app.post(
         throw new HttpError(
           "Password is required and must be at most 500 characters.",
         );
-      const hash = await promisify(scrypt)(password, Buffer.from(getSetting("password_salt"), "hex"), 64);
-      if (!timingSafeEqual(hash, Buffer.from(getSetting("password_fingerprint"), "hex")))
+      const hash = await promisify(scrypt)(
+        password,
+        Buffer.from(getSetting("password_salt"), "hex"),
+        64,
+      );
+      if (
+        !timingSafeEqual(
+          hash,
+          Buffer.from(getSetting("password_fingerprint"), "hex"),
+        )
+      )
         throw new HttpError("Incorrect password.", 401);
       const token = randomBytes(32).toString("hex");
       stmt(
@@ -322,7 +424,10 @@ app.post(
   },
 );
 app.get("/api/admin/session", admin, (_req, res) =>
-  res.json({ ok: true, defaultPassword: !tenantId() && !process.env.ADMIN_PASSWORD }),
+  res.json({
+    ok: true,
+    defaultPassword: !tenantId() && !process.env.ADMIN_PASSWORD,
+  }),
 );
 app.post("/api/admin/logout", admin, (req, res) => {
   stmt("DELETE FROM admin_sessions WHERE token_hash=?").run(
@@ -331,17 +436,47 @@ app.post("/api/admin/logout", admin, (req, res) => {
   res.clearCookie(adminCookie(), { path: tenantPath() });
   res.json({ ok: true });
 });
-app.post("/api/admin/password", admin, limit("password", 5, 900000), async (req,res,next) => {
-  try {
-    const { currentPassword, password } = req.body;
-    if (typeof currentPassword !== 'string' || currentPassword.length > 500 || typeof password !== 'string' || password.length < 12 || password.length > 128) throw new HttpError('Use a password of 12–128 characters.');
-    const old = await promisify(scrypt)(currentPassword, Buffer.from(getSetting('password_salt'),'hex'), 64);
-    if (!timingSafeEqual(old, Buffer.from(getSetting('password_fingerprint'),'hex'))) throw new HttpError('Incorrect current password.',401);
-    const salt = randomBytes(32); const hash = await promisify(scrypt)(password,salt,64);
-    transaction(() => {setSetting('password_salt',salt.toString('hex'));setSetting('password_fingerprint',hash.toString('hex'));stmt('DELETE FROM admin_sessions').run();});
-    res.clearCookie(adminCookie(), {path:tenantPath()});res.json({ok:true});
-  } catch(e) { next(e); }
-});
+app.post(
+  "/api/admin/password",
+  admin,
+  limit("password", 5, 900000),
+  async (req, res, next) => {
+    try {
+      const { currentPassword, password } = req.body;
+      if (
+        typeof currentPassword !== "string" ||
+        currentPassword.length > 500 ||
+        typeof password !== "string" ||
+        password.length < 12 ||
+        password.length > 128
+      )
+        throw new HttpError("Use a password of 12–128 characters.");
+      const old = await promisify(scrypt)(
+        currentPassword,
+        Buffer.from(getSetting("password_salt"), "hex"),
+        64,
+      );
+      if (
+        !timingSafeEqual(
+          old,
+          Buffer.from(getSetting("password_fingerprint"), "hex"),
+        )
+      )
+        throw new HttpError("Incorrect current password.", 401);
+      const salt = randomBytes(32);
+      const hash = await promisify(scrypt)(password, salt, 64);
+      transaction(() => {
+        setSetting("password_salt", salt.toString("hex"));
+        setSetting("password_fingerprint", hash.toString("hex"));
+        stmt("DELETE FROM admin_sessions").run();
+      });
+      res.clearCookie(adminCookie(), { path: tenantPath() });
+      res.json({ ok: true });
+    } catch (e) {
+      next(e);
+    }
+  },
+);
 app.get("/api/admin/store", admin, (_req, res) =>
   res.json({ ...publicSettings(), _version: getSetting("store_version", 1) }),
 );
@@ -377,7 +512,7 @@ app.put("/api/admin/store", admin, (req, res, next) => {
         writeProduct(product);
       }
     });
-    res.json({ ...settings, _version: getSetting("store_version", 1) });
+    res.json({ ...publicSettings(), _version: getSetting("store_version", 1) });
   } catch (error) {
     next(error);
   }
@@ -558,9 +693,10 @@ app.post(
       if (!["jpeg", "png", "webp", "avif"].includes(meta.format))
         throw new HttpError("Upload a JPG, PNG, WebP or AVIF image.");
       const hero = req.body.kind === "hero";
+      const wide = req.body.kind === "wide";
       const logo = req.body.kind === "logo";
-      const width = logo ? 640 : hero ? 1600 : 800,
-        height = logo ? 240 : hero ? 1800 : 1000;
+      const width = logo ? 640 : wide ? 1800 : hero ? 1600 : 800,
+        height = logo ? 240 : wide ? 1200 : hero ? 1800 : 1000;
       const output = await sharp(req.file.buffer, {
         limitInputPixels: 40000000,
       })
@@ -589,149 +725,196 @@ app.post(
     }
   },
 );
-app.post("/api/orders", limit("orders", 60, 3600000), (req, res, next) => {
-  try {
-    const key = text(req.body.idempotency_key || "", "Checkout key", 80);
-    if (!/^[a-zA-Z0-9-]{16,80}$/.test(key))
-      throw new HttpError("Invalid checkout key.");
-    const previous = stmt("SELECT * FROM orders WHERE idempotency_key=?").get(
-      key,
-    );
-    if (previous)
-      return res.json({
-        order: orderObject(previous, false),
-        receipt_token: previous.token,
-      });
-    if (req.body.payment_method !== "cod")
-      throw new HttpError(
-        "Card payment is not currently available. Choose cash on delivery.",
-      );
-    const customer = validateCustomer(req.body.customer);
-    if (
-      !Array.isArray(req.body.items) ||
-      !req.body.items.length ||
-      req.body.items.length > 40
-    )
-      throw new HttpError(
-        "An order must contain between 1 and 40 product lines.",
-      );
-    const store = localizeSettings(publicSettings(), req.body.language);
-    const token = randomBytes(32).toString("hex");
-    const createdAt = new Date().toISOString();
-    const row = transaction(() => {
-      const changed = new Map();
-      const aggregated = new Map();
-      req.body.items.forEach((line) => {
-        if (
-          !line ||
-          typeof line !== "object" ||
-          !Number.isSafeInteger(line.quantity) ||
-          line.quantity < 1 ||
-          line.quantity > 99 ||
-          typeof line.variant_id !== "string"
-        )
-          throw new HttpError("Invalid product quantity.");
-        aggregated.set(
-          line.variant_id,
-          (aggregated.get(line.variant_id) || 0) + line.quantity,
-        );
-      });
-      const items = [];
-      for (const [variantId, quantity] of aggregated) {
-        if (quantity > 99)
-          throw new HttpError("The maximum quantity per style is 99.");
-        const found = productForVariant(variantId);
-        const product = found ? changed.get(found.id) || found : null;
-        if (product) changed.set(product.id, product);
-        if (!product || product.status !== "published" || !product.purchasable)
-          throw new HttpError(
-            "A product is no longer available. Please update your cart.",
-            409,
-          );
-        const variant = product.variants.find((v) => v.id === variantId);
-        if (variant.manage_inventory && variant.inventory_quantity < quantity)
-          throw new HttpError(
-            `Not enough stock for ${product.title} (${variant.title}). ${variant.inventory_quantity} left.`,
-            409,
-          );
-        const price = variant.sale_price_in_cents ?? variant.price_in_cents;
-        const visible = localizeProduct(product, req.body.language);
-        const visibleVariant = visible.variants.find(
-          (v) => v.id === variant.id,
-        );
-        items.push({
-          product_id: product.id,
-          variant_id: variant.id,
-          title: visible.title,
-          subtitle: visible.subtitle,
-          description: visible.description,
-          additional_info: visible.additional_info,
-          variant_title: visibleVariant.title,
-          image: variant.image_url || product.image,
-          price_in_cents: price,
-          quantity,
-          total_in_cents: price * quantity,
-        });
-        if (variant.manage_inventory) variant.inventory_quantity -= quantity;
-      }
-      const subtotal = items.reduce(
-        (sum, line) => sum + line.total_in_cents,
-        0,
-      );
-      const totals = quoteTotals(
-        store,
-        subtotal,
-        req.body.coupon_code || "",
-        customer.country,
-      );
-      const data = {
-        language: req.body.language === "ar" ? "ar" : "en",
-        storeName: store.name,
-        customer,
-        items,
-        payment_method: "cod",
-        currency: store.checkout.currency,
-        symbol: store.checkout.symbol,
-        ...totals,
-        delivery_note: store.checkout.deliveryNote,
-      };
-      const result = stmt(
-        "INSERT INTO orders(token,idempotency_key,created_at,data,visit_id) VALUES (?,?,?,?,?)",
-      ).run(
-        token,
+app.post(
+  "/api/orders",
+  limit("orders", 60, 3600000),
+  async (req, res, next) => {
+    try {
+      const key = text(req.body.idempotency_key || "", "Checkout key", 80);
+      if (!/^[a-zA-Z0-9-]{16,80}$/.test(key))
+        throw new HttpError("Invalid checkout key.");
+      const previous = stmt("SELECT * FROM orders WHERE idempotency_key=?").get(
         key,
-        createdAt,
-        JSON.stringify(data),
-        trackedVisit(req.body.analytics, req),
       );
-      const number = `ORD-${String(result.lastInsertRowid).padStart(6, "0")}`;
-      stmt("UPDATE orders SET number=? WHERE id=?").run(
-        number,
-        result.lastInsertRowid,
-      );
-      if (totals.coupon_code)
-        stmt("UPDATE discounts SET used=used+1 WHERE code=?").run(
-          totals.coupon_code,
+      if (previous) {
+        let payment_url = null;
+        try {
+          payment_url = await beginShopperPayment(previous);
+        } catch {}
+        return res.json({
+          order: orderObject(previous, false),
+          receipt_token: previous.token,
+          payment_url,
+        });
+      }
+      if (!["cod", "paymob"].includes(req.body.payment_method))
+        throw new HttpError("Choose a supported payment method.");
+      if (req.body.payment_method === "paymob" && !paymentsReady())
+        throw new HttpError(
+          "Online payment is not configured for this store.",
+          409,
         );
-      stmt("INSERT INTO order_history(order_id,status,at) VALUES (?,?,?)").run(
-        result.lastInsertRowid,
-        "new",
-        createdAt,
-      );
-      for (const product of changed.values()) writeProduct(product);
-      return stmt("SELECT * FROM orders WHERE id=?").get(
-        result.lastInsertRowid,
-      );
-    });
-    res
-      .status(201)
-      .json({ order: orderObject(row, false), receipt_token: token });
-    invalidateAnalytics();
-    void deliverPending();
-  } catch (error) {
-    next(error);
-  }
-});
+      const customer = validateCustomer(req.body.customer);
+      if (req.body.payment_method === "paymob" && !customer.email)
+        throw new HttpError("Enter your email address for online payment.");
+      if (
+        !Array.isArray(req.body.items) ||
+        !req.body.items.length ||
+        req.body.items.length > 40
+      )
+        throw new HttpError(
+          "An order must contain between 1 and 40 product lines.",
+        );
+      const store = localizeSettings(publicSettings(), req.body.language);
+      const token = randomBytes(32).toString("hex");
+      const createdAt = new Date().toISOString();
+      const row = transaction(() => {
+        const changed = new Map();
+        const aggregated = new Map();
+        req.body.items.forEach((line) => {
+          if (
+            !line ||
+            typeof line !== "object" ||
+            !Number.isSafeInteger(line.quantity) ||
+            line.quantity < 1 ||
+            line.quantity > 99 ||
+            typeof line.variant_id !== "string"
+          )
+            throw new HttpError("Invalid product quantity.");
+          aggregated.set(
+            line.variant_id,
+            (aggregated.get(line.variant_id) || 0) + line.quantity,
+          );
+        });
+        const items = [];
+        for (const [variantId, quantity] of aggregated) {
+          if (quantity > 99)
+            throw new HttpError("The maximum quantity per style is 99.");
+          const found = productForVariant(variantId);
+          const product = found ? changed.get(found.id) || found : null;
+          if (product) changed.set(product.id, product);
+          if (
+            !product ||
+            product.status !== "published" ||
+            !product.purchasable
+          )
+            throw new HttpError(
+              "A product is no longer available. Please update your cart.",
+              409,
+            );
+          const variant = product.variants.find((v) => v.id === variantId);
+          if (variant.manage_inventory && variant.inventory_quantity < quantity)
+            throw new HttpError(
+              `Not enough stock for ${product.title} (${variant.title}). ${variant.inventory_quantity} left.`,
+              409,
+            );
+          const price = variant.sale_price_in_cents ?? variant.price_in_cents;
+          const visible = localizeProduct(product, req.body.language);
+          const visibleVariant = visible.variants.find(
+            (v) => v.id === variant.id,
+          );
+          items.push({
+            product_id: product.id,
+            variant_id: variant.id,
+            title: visible.title,
+            subtitle: visible.subtitle,
+            description: visible.description,
+            additional_info: visible.additional_info,
+            variant_title: visibleVariant.title,
+            image: variant.image_url || product.image,
+            price_in_cents: price,
+            quantity,
+            total_in_cents: price * quantity,
+          });
+          if (variant.manage_inventory) variant.inventory_quantity -= quantity;
+        }
+        const subtotal = items.reduce(
+          (sum, line) => sum + line.total_in_cents,
+          0,
+        );
+        const totals = quoteTotals(
+          store,
+          subtotal,
+          req.body.coupon_code || "",
+          customer.country,
+        );
+        if (req.body.payment_method === "paymob" && totals.total_in_cents < 1)
+          throw new HttpError(
+            "Online payments require a positive order total.",
+          );
+        const data = {
+          language: req.body.language === "ar" ? "ar" : "en",
+          storeName: store.name,
+          customer,
+          shopper_id: currentShopper(req)?.id || null,
+          items,
+          payment_method: req.body.payment_method,
+          payment_status:
+            req.body.payment_method === "paymob" ? "pending" : "cod",
+          ...(req.body.payment_method === "paymob"
+            ? {
+                payment_reference: randomUUID(),
+                payment_expires: Date.now() + 3600000,
+              }
+            : {}),
+          currency: store.checkout.currency,
+          symbol: store.checkout.symbol,
+          ...totals,
+          delivery_note: store.checkout.deliveryNote,
+        };
+        const result = stmt(
+          "INSERT INTO orders(token,idempotency_key,created_at,data,visit_id) VALUES (?,?,?,?,?)",
+        ).run(
+          token,
+          key,
+          createdAt,
+          JSON.stringify(data),
+          trackedVisit(req.body.analytics, req),
+        );
+        const number = `ORD-${String(result.lastInsertRowid).padStart(6, "0")}`;
+        stmt("UPDATE orders SET number=? WHERE id=?").run(
+          number,
+          result.lastInsertRowid,
+        );
+        if (req.body.payment_method === "paymob")
+          stmt(
+            "UPDATE orders SET telegram_status='awaiting_payment' WHERE id=?",
+          ).run(result.lastInsertRowid);
+        if (totals.coupon_code)
+          stmt("UPDATE discounts SET used=used+1 WHERE code=?").run(
+            totals.coupon_code,
+          );
+        stmt(
+          "INSERT INTO order_history(order_id,status,at) VALUES (?,?,?)",
+        ).run(result.lastInsertRowid, "new", createdAt);
+        for (const product of changed.values()) writeProduct(product);
+        return stmt("SELECT * FROM orders WHERE id=?").get(
+          result.lastInsertRowid,
+        );
+      });
+      let payment_url = null,
+        payment_error = "";
+      try {
+        payment_url = await beginShopperPayment(row);
+      } catch (e) {
+        payment_error = e.message;
+      }
+      res.status(201).json({
+        order: orderObject(
+          stmt("SELECT * FROM orders WHERE id=?").get(row.id),
+          false,
+        ),
+        receipt_token: token,
+        payment_url,
+        payment_error,
+      });
+      invalidateAnalytics();
+      void deliverPending();
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 app.get(
   "/api/receipt/:token",
   limit("receipt", 120, 60000),
@@ -904,6 +1087,16 @@ app.patch("/api/admin/orders/:id", admin, (req, res, next) => {
     const result = transaction(() => {
       const row = stmt("SELECT * FROM orders WHERE id=?").get(req.params.id);
       if (!row) throw new HttpError("Order not found.", 404);
+      const payment = JSON.parse(row.data);
+      if (
+        payment.payment_method === "paymob" &&
+        payment.payment_status !== "paid" &&
+        ["processing", "shipped", "delivered"].includes(status)
+      )
+        throw new HttpError(
+          "Confirm online payment before fulfilling this order.",
+          409,
+        );
       if (
         req.body.expected_status !== undefined &&
         req.body.expected_status !== row.status
@@ -981,6 +1174,14 @@ app.patch("/api/admin/orders/:id", admin, (req, res, next) => {
 app.post("/api/admin/orders/:id/telegram", admin, (req, res, next) => {
   const row = stmt("SELECT * FROM orders WHERE id=?").get(req.params.id);
   if (!row) return next(new HttpError("Order not found.", 404));
+  const payment = JSON.parse(row.data);
+  if (payment.payment_method === "paymob" && payment.payment_status !== "paid")
+    return next(
+      new HttpError(
+        "Confirm payment before sending the order notification.",
+        409,
+      ),
+    );
   if (
     row.telegram_status === "sending" &&
     row.telegram_lease_until > Date.now()
@@ -1132,6 +1333,9 @@ if (existsSync(dist)) {
       "/checkout",
       "/success",
       "/admin",
+      "/account",
+      "/saved",
+      "/cart",
     ];
     const productId = req.path.startsWith("/product/") ? req.path.slice(9) : "";
     const valid =

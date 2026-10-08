@@ -65,7 +65,13 @@ export default function OperationsPanel() {
     <div className="space-y-7">
       <section className="operations-welcome">
         <div>
-          <p className="admin-section-label">YOUR BOUTIQUE, IN FOCUS</p>
+          <p className="admin-section-label">
+            {store._template?.renderer === "form"
+              ? language === "ar"
+                ? "متجرك، بنظرة واضحة"
+                : "YOUR STORE, IN FOCUS"
+              : "YOUR BOUTIQUE, IN FOCUS"}
+          </p>
           <h1>
             A clear view.
             <br />A considered next step.
@@ -80,7 +86,7 @@ export default function OperationsPanel() {
         </div>
         <div className="welcome-emblem" aria-hidden="true">
           <span dir="ltr" lang="en">
-            B
+            {store._template?.renderer === "form" ? "V" : "B"}
           </span>
           <i />
           <i />

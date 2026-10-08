@@ -8,6 +8,7 @@ import {
   indexProductVariants,
 } from "../db.js";
 import { inTenant, tenantSQL } from "../tenant.js";
+import { ensureRetailSchema } from '../retail.js';
 export const hash = (v) => createHash("sha256").update(v).digest("hex");
 export const token = () => randomBytes(32).toString("base64url");
 export const sql = (q) => rawDb.prepare(q);
@@ -35,6 +36,7 @@ const tableNames = [
   "order_history",
   "subscribers",
   "variant_lookup",
+  "shoppers", "shopper_sessions", "retail_reviews", "retail_returns",
 ];
 const schema = sql(
   "SELECT name,tbl_name,sql,type FROM sqlite_master WHERE sql IS NOT NULL AND type IN ('table','index') ORDER BY CASE type WHEN 'table' THEN 0 ELSE 1 END",
@@ -42,6 +44,7 @@ const schema = sql(
   .all()
   .filter((r) => tableNames.includes(r.tbl_name));
 const indexes = schema.filter((r) => r.type === "index").map((r) => r.name);
+for (const store of sql('SELECT id,slug FROM platform_stores').all()) inTenant(store.id,`/s/${store.slug}`,ensureRetailSchema);
 export const owner = (user) =>
   !!user &&
   (process.env.OWNER_EMAILS || "")
@@ -183,6 +186,7 @@ export function ensurePreviews() {
     const existing = sql("SELECT * FROM platform_templates WHERE id=?").get(
       definition.id,
     );
+    if(existing) inTenant(existing.preview_id,`/demo/${definition.id}`,ensureRetailSchema);
     if (existing?.version === definition.version) continue;
     rawDb.exec("BEGIN IMMEDIATE");
     try {
@@ -194,6 +198,7 @@ export function ensurePreviews() {
       if (existing)
         inTenant(id, `/demo/${definition.id}`, () => {
           for (const table of [
+            "retail_reviews", "retail_returns", "shopper_sessions", "shoppers",
             "order_history",
             "events",
             "visits",
@@ -210,7 +215,7 @@ export function ensurePreviews() {
       initializeTenant(
         id,
         `/demo/${definition.id}`,
-        definition,
+        {...definition,products:definition.previewProducts||definition.products},
         definition.settings.name,
         token(),
       );

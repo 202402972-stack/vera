@@ -15,7 +15,13 @@ export function StoreProvider({ children }) {
   const refresh = async () => {
     setLoading(true);
     try {
-      setStore(await api(window.location.pathname.endsWith("/admin") ? "/admin/bootstrap" : "/store"));
+      setStore(
+        await api(
+          window.location.pathname.endsWith("/admin")
+            ? "/admin/bootstrap"
+            : "/store",
+        ),
+      );
       setError("");
       setReady(true);
     } catch (err) {

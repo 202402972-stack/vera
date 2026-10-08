@@ -1,4 +1,16 @@
-# Release validation — 7 October 2026
+# FORM 2.1 validation — 8 October 2026
+
+This release was reviewed locally. `npm run lint` and `npm run build` passed. The focused command `node --test tests/form.test.js tests/retail.test.js tests/platform.test.js` passed **22 tests** covering tenant boundaries, template identity during saves, version conflicts, variant validation, shopper sessions and recovery, receipt capabilities, verified reviews/returns, checkout reservations, duplicate requests/callbacks and canonical payment mismatches.
+
+Real browser review covered FORM at 1440px and 390px in English and Arabic, product detail, saved items, registration, COD checkout, durable receipt, account order history, merchant login, campaign image upload and settings persistence. The final screenshots are in the local `output/playwright` folder; selected release screenshots are included in `previews/form-2.1`. Mobile home had matching viewport/document width and no broken images. These checks exposed and fixed an empty-cart product request, lost template metadata after settings save and a tenant-rewritten SQL aggregate alias that broke order counts.
+
+The remaining live acceptance step is merchant-specific Google/Paymob configuration and provider sandbox payment confirmation. Local provider tests mock network responses and do not prove a real charge. Production dependency audit reported **0 vulnerabilities**; development tooling retains 7 inherited findings (5 high, 2 moderate). A compatible `shell-quote` override removed the inherited critical finding. Tailwind's remaining dependency findings were not addressed with a forced major upgrade.
+
+The historical validation below was included in the original 2.0 project. Those broad browser suites were not rerun for this release.
+
+---
+
+# Original release validation — 7 October 2026
 
 The implementation was tested locally, not deployed to a live Railway account.
 

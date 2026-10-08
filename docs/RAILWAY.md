@@ -2,7 +2,7 @@
 
 One service runs the entire platform; stores do not create Railway services. Use Node.js 24 and the included Dockerfile/railway.json.
 
-1. Push this repository to your private GitHub repository and create a Railway service from it, or run `railway up` from an authenticated Railway CLI session.
+1. Create a Railway service from the [VÉRA GitHub repository](https://github.com/202402972-stack/vera), or run `railway up` from an authenticated Railway CLI session. Keep credentials in Railway Variables and runtime data on the private persistent volume.
 2. Add **one persistent volume mounted at `/data`**. Set `DATA_DIR=/data`. Database schema creation runs at application startup, when the volume is mounted; do not move it to a build/pre-deploy command.
 3. Generate a public Railway domain or connect your platform domain. Set `PUBLIC_URL=https://your-domain` (no path or trailing slash), `NODE_ENV=production`, `OWNER_EMAILS=your-verified-google-email`, and `SUPPORT_EMAIL=your-support-email`.
 4. Configure the Google credentials and exact callback in [INTEGRATIONS.md](INTEGRATIONS.md). Configure Paymob when the merchant account and recurring integrations are approved. Secret values belong in Railway Variables, never public Vite variables.

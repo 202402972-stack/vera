@@ -1902,4 +1902,28 @@ html[lang="ar"] .v-price small {
     min-width: 30px;
   }
 }
-.v-skip:not(:focus){clip-path:inset(50%);width:1px;height:1px;overflow:hidden;white-space:nowrap;padding:0}
+.v-skip:not(:focus) {
+  clip-path: inset(50%);
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  white-space: nowrap;
+  padding: 0;
+}
+.v-template-palette {
+  display: flex;
+  gap: 6px;
+  margin: 16px 0;
+}
+.v-template-palette span {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid #00000012;
+}
+.v-template + .v-template {
+  margin-top: 55px;
+}
+.v-template:nth-of-type(even) .v-template-image {
+  background: #dce8ef;
+}

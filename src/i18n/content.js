@@ -180,7 +180,7 @@ export function localizeProduct(base, language) {
   return {
     ...base,
     ...Object.fromEntries(
-      ["title", "subtitle", "description", "ribbon_text"].map((key) => [
+      ["title", "subtitle", "description", "ribbon_text", "category"].map((key) => [
         key,
         tr[key] === undefined ? base[key] : tr[key],
       ]),
@@ -241,6 +241,7 @@ export function updateProductContent(base, language, key, value) {
       "subtitle",
       "description",
       "ribbon_text",
+      "category",
       "additional_info",
     ].includes(key)
   ) {

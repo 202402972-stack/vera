@@ -1,5 +1,17 @@
 import { studioTranslations } from "./studio.js";
 export const translations = {
+  "Awaiting payment": "بانتظار تأكيد الدفع",
+  Paid: "مدفوع",
+  "Payment failed": "فشل الدفع",
+  "Payment expired": "انتهت مهلة الدفع",
+  Refunded: "تم رد المبلغ",
+  "Payment received; contact the store": "وصل الدفع بعد الإلغاء؛ تواصل مع المتجر",
+  "Total paid": "المجموع المدفوع",
+  "Order total": "مجموع الطلب",
+  "Total due on delivery": "المبلغ المطلوب عند الاستلام",
+  Email: "البريد الإلكتروني",
+  "Delivered COD and verified online payments":
+    "الدفع عند الاستلام للطلبات المسلّمة والمدفوعات الإلكترونية المؤكدة",
   ...studioTranslations,
   "Stored Telegram credentials could not be opened. Re-enter the bot token.":
     "تعذّر فتح بيانات تيليغرام المحفوظة. أعد إدخال رمز البوت.",

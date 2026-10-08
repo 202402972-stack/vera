@@ -20,6 +20,7 @@ const identifiers = new Set([
   "order_history",
   "subscribers",
   "variant_lookup",
+  "shoppers", "shopper_sessions", "retail_reviews", "retail_returns",
 ]);
 export function registerTenantIdentifiers(names) { for(const name of names) identifiers.add(name); }
 export function tenantSQL(sql, id = tenantId(), extra = []) {

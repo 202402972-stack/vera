@@ -18,6 +18,7 @@ const { sql } = await import("./platform/core.js");
 const { inTenant } = await import("./tenant.js");
 const { retryPayments } = await import("./platform/paymob.js");
 const { deliverPending, stopDelivery } = await import("./telegram.js");
+const { expireShopperPayments } = await import("./shopper-payments.js");
 const server = app.listen(process.env.PORT || 3001, () =>
   console.log("VÉRA platform ready"),
 );
@@ -29,8 +30,15 @@ const timer = setInterval(async () => {
     for (const s of sql(
       "SELECT id,slug FROM platform_stores WHERE suspended=0",
     ).all())
-      await inTenant(s.id, `/s/${s.slug}`, deliverPending);
+      await inTenant(s.id, `/s/${s.slug}`, async () => {
+        expireShopperPayments();
+        await deliverPending();
+      });
     await retryPayments();
+  } catch {
+    console.error(
+      "Background commerce work failed; it will retry on the next tick.",
+    );
   } finally {
     busy = false;
   }

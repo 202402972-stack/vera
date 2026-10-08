@@ -177,7 +177,7 @@ export function analyticsReport(days = 30, page = 1) {
   ).get(since).count;
   // Aggregate small numeric facts in SQLite; never deserialize every historical receipt.
   const sales = stmt(
-    "SELECT json_extract(data,'$.currency') currency,MAX(json_extract(data,'$.symbol')) symbol,COUNT(*) orders,COALESCE(SUM(CASE WHEN status<>'cancelled' THEN json_extract(data,'$.total_in_cents') ELSE 0 END),0) orderValue,COALESCE(SUM(CASE WHEN status='delivered' THEN json_extract(data,'$.total_in_cents') ELSE 0 END),0) collected FROM orders WHERE created_at>=? GROUP BY currency",
+    "SELECT json_extract(data,'$.currency') currency,MAX(json_extract(data,'$.symbol')) symbol,COUNT(*) orderCount,COALESCE(SUM(CASE WHEN status<>'cancelled' AND COALESCE(json_extract(data,'$.payment_status'),'')<>'refunded' THEN json_extract(data,'$.total_in_cents') ELSE 0 END),0) orderValue,COALESCE(SUM(CASE WHEN status<>'cancelled' AND ((COALESCE(json_extract(data,'$.payment_method'),'cod')='cod' AND status='delivered') OR (json_extract(data,'$.payment_method')='paymob' AND json_extract(data,'$.payment_status')='paid')) THEN json_extract(data,'$.total_in_cents') ELSE 0 END),0) collected FROM orders WHERE created_at>=? GROUP BY currency",
   ).all(iso);
   const breakdown = (column) =>
     stmt(
@@ -225,7 +225,7 @@ export function analyticsReport(days = 30, page = 1) {
       v.id,
     ),
   }));
-  const revenueByCurrency = sales.map(({ orders, ...r }) => r);
+  const revenueByCurrency = sales.map(({ orderCount, ...r }) => r);
   const value = {
     ...visits,
     journeyPage: page,
@@ -237,7 +237,7 @@ export function analyticsReport(days = 30, page = 1) {
     bounce_rate: visits.sessions
       ? Math.round((bounce / visits.sessions) * 100)
       : 0,
-    orders: sales.reduce((n, s) => n + s.orders, 0),
+    orders: sales.reduce((n, s) => n + s.orderCount, 0),
     revenue: sales.length === 1 ? sales[0].orderValue : 0,
     deliveredRevenue: sales.length === 1 ? sales[0].collected : 0,
     conversion: visits.sessions

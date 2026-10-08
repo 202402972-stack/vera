@@ -23,7 +23,11 @@ export async function api(path, options = {}) {
     );
   }
   if (!response.ok) {
-    if (response.status === 401 && path !== "/admin/login")
+    if (
+      response.status === 401 &&
+      path.startsWith("/admin/") &&
+      path !== "/admin/login"
+    )
       window.dispatchEvent(new Event("admin-session-expired"));
     const error = new Error(body.error || "Request failed.");
     error.status = response.status;
@@ -66,12 +70,18 @@ export async function getProducts({
   category = "",
   collection = "",
   sort = "featured",
+  colors = "",
+  sizes = "",
+  materials = "",
+  min_price = "",
+  max_price = "",
+  in_stock = "",
   signal,
 } = {}) {
   const data = await api(
     ids
       ? `/products?ids=${encodeURIComponent(ids.join(","))}`
-      : `/products?${new URLSearchParams({ offset, search, category, collection, sort })}`,
+      : `/products?${new URLSearchParams({ offset, search, category, collection, sort, colors, sizes, materials, min_price, max_price, in_stock })}`,
     { signal },
   );
   return {

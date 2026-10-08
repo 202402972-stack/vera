@@ -320,6 +320,7 @@ app.use("/s/:slug", (req, res, next) => {
     req.params.slug,
   );
   if (!s) return res.status(404).send("Store not found.");
+  if(req.method==='POST'&&req.path==='/api/payments/webhook') return inTenant(s.id,`/s/${s.slug}`,()=>storeApp(req,res,next));
   const adminRoute =
     req.path === "/admin" || req.path.startsWith("/api/admin/");
   if (

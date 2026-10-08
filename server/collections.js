@@ -1,5 +1,5 @@
 import { getSetting, setSetting, productById, transaction } from "./db.js";
-import { HttpError, text } from "./validation.js";
+import { HttpError, text, imageUrl } from "./validation.js";
 export function registerCollections(app, admin) {
   const data = () => ({
     collections: getSetting("collections", []),
@@ -63,6 +63,7 @@ export function registerCollections(app, admin) {
             false,
           ),
           published: c.published === true,
+          image: c.image ? imageUrl(c.image) : '',
           productIds: [...new Set(c.productIds)],
         };
       });

@@ -1,10 +1,11 @@
 {
   "name": "vera-commerce",
   "type": "module",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "private": true,
   "scripts": {
-    "dev": "concurrently -k \"PORT=3001 node --env-file-if-exists=.env --watch server/platform-entry.js\" \"vite --host --port 3000\"",
+    "dev": "concurrently -k \"node --env-file-if-exists=.env --watch server/platform-entry.js\" \"vite --host --port 3000\"",
+    "review:form": "node scripts/review-form.mjs",
     "build": "vite build",
     "preview": "npm run build && npm start",
     "lint": "eslint .",
@@ -58,5 +59,8 @@
   },
   "engines": {
     "node": ">=24 <25"
+  },
+  "overrides": {
+    "shell-quote": "1.12.0"
   }
 }

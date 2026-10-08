@@ -8,6 +8,13 @@
 - `server/templates/registry.js`: versioned templates, public metadata and initial store seed.
 - `src/templates/registry.jsx`: an explicit allowlist of lazily loaded template renderers.
 - `server/index.js` and existing React store modules: the preserved merchant engine and storefront.
+- `server/retail.js`: tenant-scoped shopper sessions, account orders, saved items, verified reviews, return requests and merchant-issued one-time account recovery.
+- `server/shopper-payments.js`: per-store Paymob intentions, signed callbacks, canonical transaction checks, payment expiry and manual reconciliation; independent of platform subscriptions.
+- `src/templates/form/`: FORM renderer and its responsive, bilingual design system; shared cart, settings, checkout, receipts and merchant dashboard.
+
+FORM settings persist hero and mobile image framing, campaign media and section visibility. Variant attributes persist color, size and material; catalog filters match attributes and price/stock on the same variant. Collections persist separate bilingual labels and imagery. Setting saves return server-owned template metadata and use optimistic versions; clients cannot change the renderer through settings.
+
+Shopper cookies and browser saved items are tenant scoped. Guest orders can be claimed only with their receipt capability and matching account email. Reviews require a delivered purchase and merchant approval. Recovery links expire after 30 minutes, are stored as hashes, are single-use, and revoke prior sessions. Backups must include the SQLite database, uploads and encryption key.
 
 ## Isolation within one database
 

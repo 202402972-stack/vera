@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { api, jsonRequest } from "@/api/store";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { Button } from "@/components/ui/button";
+import {ImagePicker} from './AdminUI';
 export default function CollectionsPanel() {
   const { language } = useLanguage();
   const t = (ar, en) => (language === "ar" ? ar : en);
@@ -171,6 +172,7 @@ export default function CollectionsPanel() {
                   </label>
                 ))}
               </div>
+              <ImagePicker value={editing.image||''} onChange={image=>setEditing({...editing,image})} onError={setError} label={t('صورة المجموعة','Collection image')}/>
               <label className="flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"

@@ -27,7 +27,8 @@ import {
 } from "@/api/store";
 import { track, flush, analyticsIdentity } from "@/lib/analytics";
 import "@/admin.css";
-export default function CheckoutPage() {
+export default function CheckoutPage({ form = false }) {
+  const ContentTag = form ? "section" : "main";
   const { t, language } = useLanguage();
   const { cartItems, clearCart } = useCart();
   const { store } = useStore();
@@ -48,6 +49,29 @@ export default function CheckoutPage() {
     [error, setError] = useState(""),
     [lines, setLines] = useState([]),
     [loading, setLoading] = useState(true);
+  const [methods, setMethods] = useState(["cod"]),
+    [paymentMethod, setPaymentMethod] = useState("cod");
+  useEffect(() => {
+    let active = true;
+    api("/retail/session")
+      .then(({ customer: shopper }) => {
+        if (active && shopper)
+          setCustomer((prev) => ({
+            ...prev,
+            name: prev.name || shopper.name,
+            email: prev.email || shopper.email,
+          }));
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
+  useEffect(() => {
+    api("/payments")
+      .then((d) => setMethods(d.methods))
+      .catch(() => {});
+  }, []);
   const [couponInput, setCouponInput] = useState(""),
     [coupon, setCoupon] = useState("");
   const [quote, setQuote] = useState(null),
@@ -98,6 +122,11 @@ export default function CheckoutPage() {
     }
   });
   useEffect(() => {
+    if (!cartItems.length) {
+      setLines([]);
+      setLoading(false);
+      return;
+    }
     track("checkout_start");
     flush();
     getProducts({ ids: cartItems.map((item) => item.product.id) })
@@ -148,7 +177,7 @@ export default function CheckoutPage() {
         language,
         analytics: analyticsIdentity(),
         customer,
-        payment_method: "cod",
+        payment_method: paymentMethod,
         items: cartItems.map((i) => ({
           variant_id: i.variant.id,
           quantity: i.quantity,
@@ -161,6 +190,10 @@ export default function CheckoutPage() {
       track("order_created", result.order.number, result.order.total_in_cents);
       flush();
       clearCart();
+      if (result.payment_url) {
+        window.location.assign(result.payment_url);
+        return;
+      }
       navigate(`/success#${result.receipt_token}`, {
         replace: true,
       });
@@ -177,14 +210,14 @@ export default function CheckoutPage() {
         <title>Checkout - {store.name}</title>
         <meta name="robots" content="noindex" />
       </Helmet>
-      <Header />
-      <main
+      {!form && <Header />}
+      <ContentTag
         id="main-content"
         tabIndex={-1}
         className="admin-scope max-w-6xl mx-auto px-4 sm:px-6 py-12"
       >
         <Link
-          to="/"
+          to={form ? "/shop" : "/"}
           className="inline-flex items-center gap-2 text-sm text-muted-foreground mb-8"
         >
           <ArrowLeft size={16} /> Back to collection
@@ -225,7 +258,14 @@ export default function CheckoutPage() {
                     {[
                       ["name", "Full name", 120, true],
                       ["phone", "Phone number", 60, true],
-                      ["email", "Email (optional)", 200, false],
+                      [
+                        "email",
+                        paymentMethod === "paymob"
+                          ? "Email"
+                          : "Email (optional)",
+                        200,
+                        paymentMethod === "paymob",
+                      ],
                       ["country", "Country", 100, true],
                     ].map(([field, label, max, required]) =>
                       field === "country" &&
@@ -346,7 +386,12 @@ export default function CheckoutPage() {
                 <section className="admin-panel">
                   <h2 className="text-2xl mb-5">Payment method</h2>
                   <label className="flex items-center gap-4 rounded-xl border border-primary bg-primary/5 p-4">
-                    <input type="radio" checked readOnly name="payment" />
+                    <input
+                      type="radio"
+                      checked={paymentMethod === "cod"}
+                      onChange={() => setPaymentMethod("cod")}
+                      name="payment"
+                    />
                     <Banknote className="text-primary" />
                     <span>
                       <strong className="block text-sm">
@@ -357,6 +402,29 @@ export default function CheckoutPage() {
                       </span>
                     </span>
                   </label>
+                  {methods.includes("paymob") && (
+                    <label className="flex items-center gap-4 rounded-xl border p-4 mt-3">
+                      <input
+                        type="radio"
+                        name="payment"
+                        checked={paymentMethod === "paymob"}
+                        onChange={() => setPaymentMethod("paymob")}
+                      />
+                      <CreditCard />
+                      <span>
+                        <strong className="block text-sm">
+                          {language === "ar"
+                            ? "الدفع الإلكتروني عبر Paymob"
+                            : "Online payment with Paymob"}
+                        </strong>
+                        <span className="text-xs text-muted-foreground">
+                          {language === "ar"
+                            ? "إتمام الدفع على صفحة Paymob الآمنة."
+                            : "Complete payment on Paymob’s secure checkout."}
+                        </span>
+                      </span>
+                    </label>
+                  )}
                 </section>
               </div>
               <aside className="admin-panel h-fit lg:sticky lg:top-28">
@@ -489,7 +557,13 @@ export default function CheckoutPage() {
                   ) : (
                     <Banknote size={18} className="mr-2" />
                   )}
-                  {busy ? "Placing order…" : "Place order · Cash on delivery"}
+                  {busy
+                    ? "Placing order…"
+                    : paymentMethod === "paymob"
+                      ? language === "ar"
+                        ? "المتابعة إلى الدفع"
+                        : "Continue to payment"
+                      : "Place order · Cash on delivery"}
                 </Button>
                 <p className="text-xs text-muted-foreground mt-4">
                   {store.checkout.deliveryNote}
@@ -506,8 +580,8 @@ export default function CheckoutPage() {
             </form>
           )}
         </motion.div>
-      </main>
-      <Footer />
+      </ContentTag>
+      {!form && <Footer />}
     </>,
     t,
   );

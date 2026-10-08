@@ -33,6 +33,9 @@ import IntegrationsPanel from "@/components/admin/IntegrationsPanel";
 import AdminLogin from "@/components/admin/AdminLogin";
 import useScrollHeader from "@/hooks/useScrollHeader";
 import "@/admin.css";
+import FormDesign from "@/components/admin/FormDesign";
+import RetailPanel from "@/components/admin/RetailPanel";
+import PaymentsPanel from "@/components/admin/PaymentsPanel";
 const tabs = [
   ["overview", "Overview", LayoutDashboard],
   ["orders", "Orders", ShoppingBag],
@@ -43,10 +46,18 @@ const tabs = [
   ["footer", "Footer & settings", Settings],
   ["analytics", "Analytics", BarChart3],
   ["integrations", "Connections", Send],
+  ["design", "Store design", Palette],
+  ["customers", "Customers", ShoppingBag],
+  ["reviews", "Reviews", Type],
+  ["returns", "Returns & exchanges", Package],
+  ["payments", "Payments", SlidersHorizontal],
 ];
 export default function AdminPage() {
   const { t, language, setLanguage } = useLanguage();
   const { store } = useStore();
+  const isForm = store._template?.renderer === "form";
+  const availableTabs = tabs.filter(([id]) => id !== "design" || isForm);
+  const copy = (en, ar) => (language === "ar" ? ar : en);
   const [uploadCount, setUploadCount] = useState(0);
   const [session, setSession] = useState(null),
     [checking, setChecking] = useState(true),
@@ -56,7 +67,7 @@ export default function AdminPage() {
     [message, setMessage] = useState("");
   const { headerRef, hidden, reveal } = useScrollHeader(!!session);
   const [params, setParams] = useSearchParams();
-  const tab = tabs.some(([id]) => id === params.get("tab"))
+  const tab = availableTabs.some(([id]) => id === params.get("tab"))
     ? params.get("tab")
     : "overview";
   useEffect(() => {
@@ -122,6 +133,11 @@ export default function AdminPage() {
     }
   }
   const content = {
+    design: isForm ? <FormDesign notify={setMessage} /> : null,
+    customers: <RetailPanel kind="customers" notify={setMessage} />,
+    reviews: <RetailPanel kind="reviews" notify={setMessage} />,
+    returns: <RetailPanel kind="returns" notify={setMessage} />,
+    payments: <PaymentsPanel notify={setMessage} />,
     overview: <OperationsPanel />,
     brand: <BrandStudio notify={setMessage} />,
     commerce: <CommercePanel notify={setMessage} />,
@@ -217,7 +233,7 @@ export default function AdminPage() {
                   lang="en"
                   aria-hidden="true"
                 >
-                  B
+                  V
                 </span>
                 <span>
                   {store.name}
@@ -226,7 +242,7 @@ export default function AdminPage() {
               </Link>
               <p className="sidebar-label">WORKSPACE</p>
               <nav className="admin-tabs" aria-label="Dashboard sections">
-                {tabs.map(([id, label, Icon]) => (
+                {availableTabs.map(([id, label, Icon]) => (
                   <button
                     key={id}
                     disabled={uploadCount > 0}
@@ -243,7 +259,16 @@ export default function AdminPage() {
                     aria-current={tab === id ? "page" : undefined}
                   >
                     <Icon size={16} />
-                    {label}
+                    {{
+                      design: copy("Store design", "تصميم المتجر"),
+                      customers: copy("Customers", "العملاء"),
+                      reviews: copy("Reviews", "التقييمات"),
+                      returns: copy(
+                        "Returns & exchanges",
+                        "الاسترجاع والاستبدال",
+                      ),
+                      payments: copy("Payments", "المدفوعات"),
+                    }[id] || label}
                   </button>
                 ))}
               </nav>
@@ -260,6 +285,43 @@ export default function AdminPage() {
               </div>
             </aside>
             <main className="dashboard-main">
+              <div className="studio-page-heading">
+                <div>
+                  <span className="studio-template-badge">
+                    {isForm ? "FORM" : "THE ATELIER"} ·{" "}
+                    {copy("MERCHANT STUDIO", "لوحة المتجر")}
+                  </span>
+                  <h1>
+                    {copy(
+                      availableTabs.find(([id]) => id === tab)?.[1] ||
+                        "Overview",
+                      {
+                        overview: "نظرة عامة",
+                        orders: "الطلبات",
+                        products: "المنتجات",
+                        brand: "هوية المتجر",
+                        commerce: "إعدادات التجارة",
+                        content: "محتوى المتجر",
+                        footer: "الفوتر والإعدادات",
+                        analytics: "التحليلات",
+                        integrations: "التكاملات",
+                        design: "تصميم المتجر",
+                        customers: "العملاء",
+                        reviews: "التقييمات",
+                        returns: "الاسترجاع والاستبدال",
+                        payments: "المدفوعات",
+                      }[tab],
+                    )}
+                  </h1>
+                </div>
+                <Link
+                  to={isForm ? "/admin?tab=design" : "/admin?tab=brand"}
+                  className="studio-heading-action"
+                >
+                  {copy("Customize store", "تخصيص المتجر")}
+                  <ArrowUpRight size={16} />
+                </Link>
+              </div>
               {error && <Notice error>{error}</Notice>}
               {message && <Notice>{message}</Notice>}
               <motion.div

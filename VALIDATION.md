@@ -1,4 +1,8 @@
-# Release validation — 7 October 2026
+# Current release validation
+
+See [FORM 2.1 validation](docs/VALIDATION.md) for the checks run on 8 October 2026, current screenshots and live-provider limitations. The record below belongs to the original 2.0 release; those broad suites were not rerun for 2.1.
+
+# Original release validation — 7 October 2026
 
 The implementation was tested locally, not deployed to a live Railway account.
 

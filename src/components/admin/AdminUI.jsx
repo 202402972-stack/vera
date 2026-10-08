@@ -169,7 +169,9 @@ export function ImagePicker({
         <p className="admin-hint my-2">
           {kind === "logo"
             ? "Transparent PNG or WebP recommended. Your logo keeps its proportions, up to 640 × 240 px."
-            : kind === "hero"
+              : kind === 'wide'
+                ? 'Recommended: 1,800 × 1,200 px (3:2). Adjust the desktop and mobile focal positions in Store design.'
+              : kind === "hero"
               ? "Recommended: 1,600 × 1,800 px. Keep the subject centred; the existing responsive hero crops the image to fill its panel."
               : "800 × 1,000 px (4:5 portrait). Used in cards, product gallery, cart and order receipts."}{" "}
           {kind === "logo"

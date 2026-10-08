@@ -1,4 +1,191 @@
 /* Shared admin/checkout primitives. Merchant Studio tokens and layout are scoped below. */
+.studio-page-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 28px;
+}
+.studio-page-heading h1 {
+  font-family: var(--font-body);
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  margin-top: 10px;
+}
+.studio-template-badge {
+  display: inline-flex;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  padding: 6px 10px;
+  border: 1px solid hsl(var(--border));
+  border-radius: 5px;
+  background: white;
+  color: hsl(var(--primary));
+}
+.studio-heading-action {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-size: 12px;
+  border: 1px solid hsl(var(--border));
+  background: white;
+  padding: 10px 15px;
+  border-radius: 6px;
+}
+.studio-empty {
+  border: 1px dashed #c9d7cf;
+  border-radius: 8px;
+  padding: 55px 20px;
+  text-align: center;
+}
+.studio-empty h3 {
+  font-family: var(--font-body);
+  font-size: 18px;
+  font-weight: 600;
+}
+.studio-empty p {
+  font-size: 12px;
+  color: #63776b;
+  margin-top: 12px;
+}
+.studio-retail-list {
+  display: grid;
+  gap: 15px;
+}
+.studio-retail-list article {
+  display: flex;
+  gap: 20px;
+  justify-content: space-between;
+  padding: 20px;
+  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
+}
+.studio-retail-list small {
+  display: block;
+  font-size: 10px;
+  color: hsl(var(--muted-foreground));
+  margin: 5px 0;
+}
+.studio-retail-list p {
+  font-size: 12px;
+  max-width: 600px;
+  margin: 10px 0;
+}
+.studio-retail-list select,
+.studio-retail-list textarea {
+  padding: 10px;
+  border: 1px solid hsl(var(--border));
+  border-radius: 5px;
+  width: 100%;
+  background: white;
+}
+.studio-status {
+  display: inline-block;
+  font-size: 10px;
+  padding: 5px 10px;
+  background: #edf4f0;
+  color: #2a5547;
+  border-radius: 4px;
+}
+.studio-form-preview {
+  aspect-ratio: 3/2;
+  position: relative;
+  background: #dce8ef;
+  overflow: hidden;
+  border-radius: 6px;
+}
+.studio-form-preview > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.studio-form-preview > div {
+  position: absolute;
+  top: 15%;
+  left: 7%;
+  width: 55%;
+  color: #172321;
+}
+.studio-form-preview h2 {
+  font-size: clamp(20px, 2.5vw, 40px) !important;
+  white-space: pre-line;
+  margin: 20px 0 10px;
+}
+.studio-form-preview p {
+  font-size: 11px;
+}
+.studio-form-preview .form-button {
+  padding: 10px 14px;
+  font-size: 10px;
+  min-height: 0;
+  margin-top: 15px;
+}
+.studio-form-mobile {
+  width: 180px;
+  aspect-ratio: 9/14;
+  border: 6px solid #172f28;
+  border-radius: 16px;
+  overflow: hidden;
+  margin: 20px auto;
+}
+.studio-form-mobile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.admin-dashboard .admin-panel {
+  box-shadow: none;
+  border-radius: 10px;
+}
+.admin-dashboard .admin-panel-heading h2 {
+  font-family: var(--font-body);
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+.admin-dashboard .operations-welcome h1 {
+  font-family: var(--font-body);
+  font-size: clamp(26px, 3vw, 42px);
+  letter-spacing: -0.035em;
+}
+.admin-dashboard .dashboard-sidebar {
+  overflow-y: auto;
+}
+.admin-dashboard .admin-tabs {
+  gap: 3px;
+}
+.admin-dashboard .admin-tab {
+  border-radius: 6px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+.admin-dashboard .dashboard-store-name {
+  font-family: var(--font-body) !important;
+  font-size: 18px !important;
+  letter-spacing: -0.02em;
+}
+@media (max-width: 700px) {
+  .studio-page-heading {
+    align-items: start;
+  }
+  .studio-page-heading h1 {
+    font-size: 24px;
+  }
+  .studio-heading-action {
+    font-size: 10px;
+    padding: 8px;
+  }
+  .studio-retail-list article {
+    flex-direction: column;
+  }
+  .studio-template-badge {
+    font-size: 8px;
+  }
+  .studio-form-preview h2 {
+    font-size: 24px !important;
+  }
+}
 .admin-scope {
   font-size: 14px;
 }
@@ -1966,4 +2153,21 @@ html[dir="rtl"] .admin-scope .absolute.right-3 {
   font-size: 11px;
   color: hsl(var(--muted-foreground));
   text-align: end;
+}
+.studio-form-preview {
+  min-width: 0;
+  max-width: 100%;
+  font-family: FormBody, sans-serif;
+  aspect-ratio: 16 / 9;
+}
+.studio-form-preview h2 {
+  font-family: FormDisplay, sans-serif;
+  font-size: clamp(18px, 2vw, 28px) !important;
+}
+.studio-form-preview > div {
+  width: 42%;
+}
+[dir="rtl"] .studio-form-preview,
+[dir="rtl"] .studio-form-preview h2 {
+  font-family: FormArabic, sans-serif;
 }

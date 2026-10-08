@@ -646,8 +646,9 @@ export default function ProductsEditor({ notify }) {
                     onChange={(value) => variantUpdate(i, "title", value)}
                     maxLength={60}
                     required
-                    hint="A colour, size or other option."
+                      hint="A colour, size or other option."
                   />
+                    {['color','size','material'].map(attribute=><Field key={attribute} label={language==='ar'?({color:'اللون',size:'المقاس',material:'الخامة'})[attribute]:attribute[0].toUpperCase()+attribute.slice(1)} value={v.attributes?.[attribute]||''} maxLength={60} onChange={value=>variantUpdate(i,'attributes',{...v.attributes,[attribute]:value})}/>)}
                   <Field
                     label="Price"
                     type="number"

@@ -1,6 +1,9 @@
 import React, { lazy, Suspense } from "react";
 import { useStore } from "@/hooks/useStore";
-const renderers = { boutique: lazy(() => import("@/App.jsx")) };
+const renderers = {
+  boutique: lazy(() => import("@/App.jsx")),
+  form: lazy(() => import("./form/FormApp.jsx")),
+};
 export default function TemplateRenderer() {
   const { store } = useStore();
   const Component = renderers[store._template?.renderer || "boutique"];

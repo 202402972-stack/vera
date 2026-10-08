@@ -89,6 +89,21 @@ export function validateProduct(input, existingIds = new Set()) {
     const stock = v.manage_inventory
       ? money(v.inventory_quantity, "Stock")
       : null;
+    if (
+      v.attributes != null &&
+      (typeof v.attributes !== "object" || Array.isArray(v.attributes))
+    )
+      throw new HttpError("Variant attributes must be an object.");
+    const attributes = Object.fromEntries(
+      ["color", "size", "material"]
+        .filter((k) => v.attributes?.[k] !== undefined)
+        .map((k) => {
+          const value = text(v.attributes[k], k, 60, false);
+          if (value.includes("|"))
+            throw new HttpError("Variant attributes cannot contain |.");
+          return [k, value];
+        }),
+    );
     return {
       id: variantId,
       title: text(v.title, "Style name", 60),
@@ -100,6 +115,7 @@ export function validateProduct(input, existingIds = new Set()) {
       inventory_quantity: stock,
       image_url: v.image_url ? imageUrl(v.image_url) : null,
       options: [],
+      attributes,
     };
   });
   if (
@@ -162,6 +178,21 @@ export function safeLink(value) {
   throw new HttpError("Links must begin with /, https://, mailto: or tel:.");
 }
 export function validateSettings(s) {
+  if (s?.form != null) {
+    if (typeof s.form !== "object" || Array.isArray(s.form))
+      throw new HttpError("FORM settings must be an object.");
+    for (const key of ["heroPosition", "mobilePosition"]) {
+      if (
+        typeof s.form[key] !== "number" ||
+        !Number.isFinite(s.form[key]) ||
+        s.form[key] < 0 ||
+        s.form[key] > 100
+      )
+        throw new HttpError(
+          "Image positions must be numbers between 0 and 100.",
+        );
+    }
+  }
   if (
     !s?.hero ||
     !s.story ||
@@ -203,6 +234,26 @@ export function validateSettings(s) {
     throw new HttpError("Enter a valid contact email.");
   return {
     brand: validateBrand(s.brand),
+    ...(s.form
+      ? {
+          form: {
+            heroPosition: Math.max(
+              0,
+              Math.min(100, Number(s.form.heroPosition) || 0),
+            ),
+            mobilePosition: Math.max(
+              0,
+              Math.min(100, Number(s.form.mobilePosition) || 0),
+            ),
+            campaignImage: s.form.campaignImage
+              ? imageUrl(s.form.campaignImage)
+              : "",
+            campaignEnabled: s.form.campaignEnabled === true,
+            categoriesEnabled: s.form.categoriesEnabled === true,
+            arrivalsEnabled: s.form.arrivalsEnabled !== false,
+          },
+        }
+      : {}),
     commerce: validateCommerce(s.commerce),
     translations: settingsTranslations(s.translations),
     name: text(s.name, "Store name", 65),
@@ -299,7 +350,13 @@ export function productTranslations(value, variants) {
   const source = value.ar;
   const ar = optionalTextFields(
     source,
-    { title: 90, subtitle: 150, ribbon_text: 24, description: 12000 },
+    {
+      title: 90,
+      subtitle: 150,
+      ribbon_text: 24,
+      description: 12000,
+      category: 60,
+    },
     ["description"],
   );
   if (source.variants !== undefined) {

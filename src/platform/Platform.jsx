@@ -245,28 +245,44 @@ function TemplateCard({ template }) {
         </span>
         <img
           src={template.image}
-          alt={t("معاينة واجهة قالب أتيليه", "The Atelier storefront preview")}
+          alt={
+            t(template.nameAr, template.name) +
+            " · " +
+            t("معاينة المتجر", "Storefront preview")
+          }
           loading="lazy"
           width="1440"
           height="1000"
         />
       </a>
       <div className="v-template-copy">
-        <span className="v-eyebrow">THE ATELIER · 01</span>
-        <h3>{t("كل تفصيلة، تحكي عنك.", "Every detail, distinctly yours.")}</h3>
-        <p>
-          {t(
-            "صور تأخذ مساحتها. منتجات في المقدمة. وهوية تصنعها من لوحة متجرك، بالعربي والإنجليزي.",
-            "Generous imagery. Products in the spotlight. A brand you shape from your dashboard, in Arabic and English.",
-          )}
-        </p>
+        <span className="v-eyebrow">
+          {template.name.toUpperCase()} · {template.id === "form" ? "02" : "01"}
+        </span>
+        <div
+          className="v-template-palette"
+          aria-label={t("ألوان القالب", "Template palette")}
+        >
+          {(template.id === "form"
+            ? ["#2a5547", "#172321", "#dce8ef", "#f7f9fa"]
+            : ["#80623e", "#c0b095", "#faf8f4", "#302c27"]
+          ).map((color) => (
+            <span key={color} style={{ background: color }} />
+          ))}
+        </div>
+        <h3>
+          {template.id === "form"
+            ? t("تفاصيل يومك، برؤية جديدة.", "Everyday. Reconsidered.")
+            : t("كل تفصيلة، تحكي عنك.", "Every detail, distinctly yours.")}
+        </h3>
+        <p>{t(template.descriptionAr, template.description)}</p>
         <div className="v-tags">
           <span>{t("هوية مرنة", "Flexible identity")}</span>
           <span>{t("إدارة متكاملة", "Store management")}</span>
           <span>{t("موبايل أولًا", "Mobile first")}</span>
         </div>
         <div className="v-actions">
-          <Button to="/login?intent=create">
+          <Button to={"/login?intent=create&template=" + template.id}>
             {t("ابدأ بهذا القالب", "Make it yours")}
             <ArrowUpRight size={16} />
           </Button>
@@ -382,8 +398,8 @@ function Home({ config }) {
           </h2>
           <p>
             {t(
-              "قالبنا الأول، أتيليه. مصمم بعناية، وقابل للتخصيص ليحمل اسمك وألوانك وحكايتك.",
-              "Meet The Atelier, our first template. Thoughtfully designed, ready for your name, your colours, and your story.",
+              "أتيليه بطابعه التحريري الدافئ، وFORM برؤيته العصرية. هويتان مختلفتان، وإدارة متكاملة لعلامتك.",
+              "The Atelier’s warm editorial character. FORM’s modern perspective. Two distinct storefronts, one considered merchant studio.",
             )}
           </p>
         </div>
@@ -560,8 +576,8 @@ function Home({ config }) {
               "Does the store accept card payments?",
             ),
             t(
-              "القالب الحالي يستقبل طلبات الدفع عند الاستلام. دفع اشتراك ڤيرا منفصل عن طريقة دفع زبائن متجرك.",
-              "The current template accepts cash-on-delivery orders. Your VÉRA subscription is separate from your customers’ payment method.",
+              "الدفع عند الاستلام متاح. ويمكن للتاجر إعداد Paymob للدفع الإلكتروني. اشتراك VÉRA مستقل عن مدفوعات العملاء.",
+              "Cash on delivery is available. Merchants can configure Paymob for online checkout. Your VÉRA subscription is separate from shopper payments.",
             ),
           ],
           [
@@ -597,6 +613,15 @@ function Home({ config }) {
   );
 }
 function Login({ config }) {
+  useEffect(() => {
+    const selected = new URLSearchParams(window.location.search).get(
+      "template",
+    );
+    if (config.templates.some((t) => t.id === selected))
+      try {
+        sessionStorage.setItem("vera-selected-template", selected);
+      } catch {}
+  }, [config.templates]);
   const t = useCopy(),
     location = useLocation();
   return (
@@ -978,7 +1003,19 @@ function Workspace({ config }) {
             </label>
             <label className="v-field">
               {t("القالب", "Template")}
-              <select name="template">
+              <select
+                name="template"
+                defaultValue={(() => {
+                  try {
+                    return (
+                      sessionStorage.getItem("vera-selected-template") ||
+                      "atelier"
+                    );
+                  } catch {
+                    return "atelier";
+                  }
+                })()}
+              >
                 {config.templates.map((x) => (
                   <option key={x.id} value={x.id}>
                     {x.name}
@@ -1134,8 +1171,8 @@ function Workspace({ config }) {
           <h2>{t("متجرك الأول يبدأ هنا.", "Your first store starts here.")}</h2>
           <p>
             {t(
-              "اختر أتيليه، وأضف التفاصيل التي تجعله لك.",
-              "Choose The Atelier. Add the details that make it yours.",
+              "اختر أتيليه أو FORM، وأضف التفاصيل التي تجعله لك.",
+              "Choose The Atelier or FORM. Add the details that make it yours.",
             )}
           </p>
           <Button onClick={() => setCreate(true)}>
@@ -1562,7 +1599,7 @@ export default function Platform({ initialConfig }) {
               <main className="v-section v-gallery">
                 <div className="v-section-heading">
                   <span className="v-eyebrow">THE TEMPLATE COLLECTION</span>
-                  <h1>The Atelier.</h1>
+                  <h1>The Atelier. FORM.</h1>
                 </div>
                 {config.templates.map((x) => (
                   <TemplateCard template={x} key={x.id} />
