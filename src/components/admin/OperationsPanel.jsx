@@ -1,4 +1,4 @@
-import { useStoreApi, Link } from "@/workspace/StoreScope";
+import { useStoreApi, useStoreScope, Link } from "@/workspace/StoreScope";
 import { useEffect, useState } from "react";
 
 import {
@@ -18,6 +18,7 @@ import AnalyticsPanel from "./AnalyticsPanel";
 
 export default function OperationsPanel() {
   const api = useStoreApi();
+  const scope = useStoreScope();
   const { t, language, date } = useLanguage();
   const { store } = useStore();
   const [data, setData] = useState(null),
@@ -134,8 +135,8 @@ export default function OperationsPanel() {
               <p>
                 New orders will appear as customers discover your collection.
               </p>
-              <Link to="/" target="_blank" rel="noreferrer">
-                Visit your store <ArrowUpRight size={14} />
+              <Link to="/admin?tab=products">
+                Add your first product <ArrowUpRight size={14} />
               </Link>
             </div>
           ) : (
@@ -212,7 +213,7 @@ export default function OperationsPanel() {
           </div>
         </Panel>
       </div>
-      <Link to="/admin?tab=brand" className="brand-callout">
+      <Link to={scope ? "/admin?tab=design" : "/admin?tab=brand"} className="brand-callout">
         <span className="callout-icon">
           <Palette size={22} />
         </span>

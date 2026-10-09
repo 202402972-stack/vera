@@ -448,8 +448,6 @@ export function Header() {
           {[
             [Home, "/", t("Home", "الرئيسية")],
             [Grid2X2, "/shop", t("Shop", "تسوق")],
-            [Grid2X2, "/collections", t("Browse", "تصفح")],
-            [UserRound, "/account", t("Account", "حسابي")],
             [Heart, "/saved", t("Saved", "المفضلة")],
           ].map(([Icon, url, label]) => (
             <Link

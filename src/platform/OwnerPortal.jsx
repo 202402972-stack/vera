@@ -345,82 +345,67 @@ export default function OwnerPortal({ config }) {
                   </Link>
                 ))}
               </div>
-              <section className="v-panel">
-                <h2>
-                  {t(
-                    "دخل Paymob المؤكد حسب العملة",
-                    "Confirmed Paymob revenue by currency",
-                  )}
-                </h2>
-                <p>
-                  {t(
-                    "إكمال إعداد أصحاب المسودات في آخر ٧ أيام؛ نافذة النشر ٧ أيام وبعضها ما زال جارياً.",
-                    "Setup completion for draft owners in the last 7 days; the publishing window is 7 days and some cohorts are still ongoing.",
-                  )}
-                  :{" "}
-                  {data.cohort.owners
-                    ? `${data.cohort.completed} / ${data.cohort.owners}`
-                    : t("لا تتوفر بيانات", "No data available")}
-                </p>
-                <p>
-                  {t(
-                    "نجاح النقل: المستورد من العناصر المختارة",
-                    "Import success: imported out of selected items",
-                  )}
-                  :{" "}
-                  {data.importSuccess.selected
-                    ? `${data.importSuccess.imported} / ${data.importSuccess.selected}`
-                    : t("لا تتوفر بيانات", "No data available")}
-                </p>
-                <p>
-                  {t(
-                    "حسابات هذا الأسبوع / السابق",
-                    "Accounts this week / previous",
-                  )}
-                  : {data.weeklyGrowth.current} / {data.weeklyGrowth.previous}
-                </p>
-                <h3>{t("نواقص إعداد المسودات", "Draft setup gaps")}</h3>
-                {Object.entries(data.bottlenecks).map(([key, count]) => (
-                  <p key={key}>
-                    {
-                      {
+              <div className="owner-overview-grid">
+                <section className="v-panel">
+                  <h2>{t("رحلة التجار", "Merchant journey")}</h2>
+                  <p>
+                    {t("حسابات هذا الأسبوع / السابق", "Accounts this week / previous")}: {data.weeklyGrowth.current} / {data.weeklyGrowth.previous}
+                  </p>
+                  <p>
+                    {t("أكملوا الإعداد خلال ٧ أيام", "Completed setup within 7 days")}: {data.cohort.owners
+                      ? `${data.cohort.completed} / ${data.cohort.owners}`
+                      : t("لا تتوفر بيانات", "No data available")}
+                  </p>
+                  <h3>{t("نواقص المسودات", "Draft setup gaps")}</h3>
+                  {Object.entries(data.bottlenecks).map(([key, count]) => (
+                    <p key={key}>
+                      {{
                         identity: t("الهوية", "Identity"),
                         product: t("المنتج", "Product"),
                         shipping: t("الشحن", "Shipping"),
                         payment: t("الدفع", "Payment"),
                         policies: t("السياسات", "Policies"),
                         mobile: t("الموبايل", "Mobile"),
-                      }[key]
-                    }
-                    : {count}
-                  </p>
-                ))}
-                {data.revenue.length ? (
-                  data.revenue.map((r) => (
-                    <p key={r.currency}>
-                      {r.currency} {(r.amount / 100).toFixed(2)}
+                      }[key]}: {count}
                     </p>
-                  ))
-                ) : (
+                  ))}
+                </section>
+                <section className="v-panel">
+                  <h2>{t("نقل المنتجات", "Product imports")}</h2>
                   <p>
-                    {t(
-                      "لا تتوفر معاملات مؤكدة",
-                      "No confirmed transactions available",
-                    )}
+                    {t("المعتمد من العناصر المختارة", "Imported from selected items")}: {data.importSuccess.selected
+                      ? `${data.importSuccess.imported} / ${data.importSuccess.selected}`
+                      : t("لا تتوفر بيانات", "No data available")}
                   </p>
-                )}
-                <p>
-                  {t(
-                    "الأحداث منذ هذه النسخة؛ لا تاريخ قديم مختلق. المتاح: منشور وغير متوقف واستحقاقه صالح. الدخل يستبعد المعاملات المستردة ولا يجمع العملات.",
-                    "Events start with this release. Available means published, not paused, with valid entitlement. Revenue excludes refunded payments and separates currencies.",
-                  )}
-                </p>
+                  <Link to="/owner/imports">{t("راجع مهام النقل", "Review import jobs")} ↗</Link>
+                </section>
+                <section className="v-panel">
+                  <h2>{t("دخل الاشتراكات المؤكد", "Confirmed subscription revenue")}</h2>
+                  {data.revenue.length ? data.revenue.map((r) => (
+                    <p key={r.currency} dir="ltr">{r.currency} {(r.amount / 100).toFixed(2)}</p>
+                  )) : <p>{t("لا تتوفر معاملات مؤكدة", "No confirmed transactions available")}</p>}
+                  <p>{t("العملات منفصلة؛ المستردات مستبعدة.", "Currencies stay separate; refunds are excluded.")}</p>
+                  <Link to="/owner/subscriptions">{t("راجع الاشتراكات", "Review subscriptions")} ↗</Link>
+                </section>
+              </div>
+              <details className="v-panel owner-event-details">
+                <summary>{t("تعريف المؤشرات والأحداث", "Metric definitions and events")}</summary>
+                <p>{t("الأحداث تبدأ من هذا الإصدار ولا تشمل تاريخًا أقدم. المتجر المتاح منشور، غير متوقف، وله استحقاق صالح.", "Events start with this release. An available store is published, unpaused and has valid entitlement.")}</p>
                 {data.events.map((e) => (
                   <p key={e.action}>
-                    {e.action}: {e.n}
+                    {{
+                      onboarding_started: t("بدأ الإعداد", "Onboarding started"),
+                      template_selected: t("اختير قالب", "Template selected"),
+                      draft_created: t("أُنشئت مسودة", "Draft created"),
+                      import_started: t("بدأ نقل", "Import started"),
+                      import_reviewed: t("رُوجع نقل", "Import reviewed"),
+                      first_product_ready: t("أول منتج جاهز", "First product ready"),
+                      store_published: t("نُشر متجر", "Store published"),
+                      first_order: t("أول طلب", "First order"),
+                    }[e.action] || e.action}: {e.n}
                   </p>
                 ))}
-              </section>
+              </details>
             </>
           )}
           {data?.user && (

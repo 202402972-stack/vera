@@ -3,6 +3,7 @@ import "@/motion.css";
 
 import React from "react";
 import { Link } from "react-router-dom";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 import {
   ArrowUpRight,
@@ -19,6 +20,7 @@ import { useCopy, Mark, Button, TemplateCard } from "./PlatformUI";
 const assets = "/platform/assets/";
 export default function Home({ config }) {
   const t = useCopy();
+  const { language } = useLanguage();
   const price = new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: config.displayPricing?.displayDefaultCurrency || "USD",
@@ -203,14 +205,23 @@ export default function Home({ config }) {
           </Button>
         </div>
         <div className="v-dashboard-frame">
-          <img
-            src={assets + "merchant-studio.png"}
-            alt={t("لوحة إدارة المتجر", "Store management dashboard")}
-            loading="lazy"
-            width="1440"
-            height="1000"
-          />
+          <picture>
+            <source
+              media="(max-width: 767px)"
+              srcSet={assets + `gala-studio-${language}-390.webp`}
+            />
+            <img
+              src={assets + `gala-studio-${language}-1440.webp`}
+              alt={t("معاينة لوحة إدارة GALA", "GALA store management preview")}
+              loading="lazy"
+              width="1440"
+              height="1020"
+            />
+          </picture>
         </div>
+        <small className="v-dashboard-caption">
+          {t("معاينة ببيانات تجريبية", "Preview with sample data")}
+        </small>
       </section>
       <LandingJourney config={config} />
       <section id="pricing" className="v-section v-pricing">

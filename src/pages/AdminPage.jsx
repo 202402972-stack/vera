@@ -81,7 +81,6 @@ export default function AdminPage() {
   const isForm = store._template?.renderer === "form";
   const availableTabs = tabs.filter(
     ([id]) =>
-      (id !== "design" || isForm) &&
       (!["preview", "imports"].includes(id) || scope),
   );
   const copy = (en, ar) => (language === "ar" ? ar : en);
@@ -165,7 +164,11 @@ export default function AdminPage() {
   const content = {
     preview: <StorePreview />,
     imports: scope ? <StoreImports /> : null,
-    design: isForm ? <FormDesign notify={setMessage} /> : null,
+    design: isForm ? (
+      <FormDesign notify={setMessage} />
+    ) : (
+      <BrandStudio notify={setMessage} />
+    ),
     customers: <RetailPanel kind="customers" notify={setMessage} />,
     reviews: <RetailPanel kind="reviews" notify={setMessage} />,
     returns: <RetailPanel kind="returns" notify={setMessage} />,
@@ -257,11 +260,13 @@ export default function AdminPage() {
                     <Globe size={15} />
                     {language === "ar" ? "English" : "العربية"}
                   </button>
-                  <Button asChild variant="outline" size="sm">
-                    <Link to="/" target="_blank">
-                      View store <ArrowUpRight size={14} className="ml-2" />
-                    </Link>
-                  </Button>
+                  {!scope && (
+                    <Button asChild variant="outline" size="sm">
+                      <Link to="/" target="_blank">
+                        View store <ArrowUpRight size={14} className="ml-2" />
+                      </Link>
+                    </Button>
+                  )}
                   <Button
                     variant="ghost"
                     size="icon"
@@ -314,7 +319,9 @@ export default function AdminPage() {
                 {copy("WORKSPACE", "مساحة المتجر")}
               </p>
               <nav className="admin-tabs" aria-label="Dashboard sections">
-                {availableTabs.map(([id, label, Icon]) => (
+                {availableTabs
+                  .filter(([id]) => id !== "brand" || isForm)
+                  .map(([id, label, Icon]) => (
                   <button
                     key={id}
                     disabled={uploadCount > 0}
@@ -349,7 +356,7 @@ export default function AdminPage() {
                       payments: copy("Payments", "المدفوعات"),
                     }[id] || label}
                   </button>
-                ))}
+                  ))}
               </nav>
               <div className="sidebar-bottom">
                 <span
@@ -400,7 +407,7 @@ export default function AdminPage() {
                   </h1>
                 </div>
                 <Link
-                  to={isForm ? "/admin?tab=design" : "/admin?tab=brand"}
+                  to="/admin?tab=design"
                   className="studio-heading-action"
                 >
                   {copy("Customize store", "تخصيص المتجر")}

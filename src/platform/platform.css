@@ -566,6 +566,7 @@
   color: #53231c;
 }
 .v-dashboard-frame {
+  width: 100%;
   border: 12px solid #f7f3eb;
   border-radius: 150px 150px 0 0;
   overflow: hidden;
@@ -574,11 +575,24 @@
   transform: rotate(3deg);
   padding-top: 55px;
 }
-.v-dashboard-frame img {
+.v-dashboard-frame picture {
+  display: block;
   width: 100%;
-  min-height: 300px;
-  object-fit: cover;
-  object-position: top left;
+}
+.v-dashboard-frame img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1440 / 1020;
+  object-fit: contain;
+}
+.v-dashboard-caption {
+  grid-column: 2;
+  display: block;
+  margin-top: -50px;
+  font-size: 11px;
+  color: #eaded4;
+  text-align: center;
 }
 .v-pricing {
   display: grid;
@@ -1601,9 +1615,13 @@ html[lang="ar"] .v-price small {
     padding-top: 25px;
   }
   .v-dashboard-frame img {
-    min-height: 230px;
-    aspect-ratio: 1.3;
-    object-fit: cover;
+    min-height: 0;
+    aspect-ratio: 390 / 800;
+    object-fit: contain;
+  }
+  .v-dashboard-caption {
+    grid-column: 1;
+    margin-top: -24px;
   }
   .v-pricing {
     grid-template-columns: 1fr;
@@ -1868,15 +1886,10 @@ html[lang="ar"] .v-price small {
   }
 }
 .v-reveal {
-  opacity: 0;
-  transform: translateY(10px);
-  transition:
-    opacity var(--motion-section, 440ms) var(--motion-ease, ease),
-    transform var(--motion-section, 440ms) var(--motion-ease, ease);
+  opacity: 1;
 }
 .v-reveal.v-revealed {
-  opacity: 1;
-  transform: translateY(0);
+  animation: vera-enter var(--motion-section, 440ms) var(--motion-ease, ease) both;
 }
 @media (prefers-reduced-motion: reduce) {
   .v-reveal {
@@ -1930,59 +1943,132 @@ html[lang="ar"] .v-price small {
 .v-transfer-steps {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 28px;
-  margin: 44px 0;
+  gap: 0;
+  margin: 36px 0;
+  border-block: 1px solid #d9cec4;
 }
 .v-transfer-steps article {
-  border-block-start: 1px solid #b49473;
-  padding: 24px;
-  background: #fff9;
+  padding: 30px 26px;
+  background: transparent;
+  position: relative;
+}
+.v-transfer-steps article + article {
+  border-inline-start: 1px solid #d9cec4;
 }
 .v-transfer-steps h3 {
   font-family: "Playfair Display", "Amiri", Georgia, serif;
-  font-size: 28px;
-  margin: 18px 0;
+  font-size: 27px;
+  margin: 16px 0 10px;
 }
 .v-transfer-steps p {
-  line-height: 1.85;
+  line-height: 1.75;
+  margin: 0;
 }
 .v-transfer-steps article > span {
-  color: #743f37;
-  font-size: 13px;
+  color: var(--v-gold);
+  font: 500 24px/1 "Playfair Display", Georgia, serif;
 }
 .v-inside-section {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 60px;
-  background: #e9e4da;
+  gap: clamp(24px, 5vw, 60px);
+  background: var(--v-canvas);
+  max-width: none;
+  padding-inline: max(24px, calc((100vw - 1160px) / 2));
+  align-items: center;
 }
-.v-inside-section [role="tablist"] {
+.v-inside-section [role="group"] {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
 }
-.v-inside-section [role="tab"] {
-  padding: 12px 16px;
-  border: 1px solid #b49473;
+.v-inside-section [aria-pressed] {
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid var(--v-gold);
   background: transparent;
+  color: var(--v-primary);
 }
-.v-inside-section [aria-selected="true"] {
-  background: #743f37;
+.v-inside-section [aria-pressed="true"] {
+  background: var(--v-primary);
   color: white;
 }
-.v-inside-section [role="tabpanel"] {
+.v-inside-section #landing-studio-detail {
   padding-block: 24px;
   min-height: 180px;
 }
-.v-inside-section img {
-  width: 100%;
-  aspect-ratio: 4/3;
-  object-fit: contain;
+.v-workbench {
+  min-width: 0;
+  background: #fffdfa;
+  border: 1px solid #d9cec4;
+  box-shadow: 0 20px 50px #4a3a3312;
 }
-.v-inside-section figcaption {
-  font-size: 12px;
-  color: #737365;
-  padding-block: 12px;
+.v-workbench-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 22px;
+  border-block-end: 1px solid #e7ded5;
+}
+.v-workbench-head b {
+  color: var(--v-primary);
+  font: 500 23px "Playfair Display", Georgia, serif;
+}
+.v-workbench-head span,
+.v-workbench-page small {
+  color: var(--v-muted);
+  font-size: 10px;
+  letter-spacing: .08em;
+}
+.v-workbench-body {
+  display: grid;
+  grid-template-columns: minmax(125px, 35%) minmax(0, 1fr);
+  min-height: 290px;
+}
+.v-workbench-index {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  border-inline-end: 1px solid #e7ded5;
+  padding: 28px 16px;
+  color: var(--v-muted);
+  font-size: 11px;
+}
+.v-workbench-index .is-active {
+  color: var(--v-primary);
+  font-weight: 700;
+}
+.v-workbench-page {
+  padding: 32px clamp(18px, 3vw, 40px);
+  animation: vera-enter var(--motion-dialog) var(--motion-ease);
+}
+.v-workbench-page h3 {
+  margin-block: 16px;
+}
+.v-workbench-rule {
+  width: 70px;
+  border-block-start: 1px solid var(--v-gold);
+  margin-block: 30px 14px;
+}
+.v-persona-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+.v-persona-list article {
+  border-block-start: 2px solid var(--v-gold);
+  padding-block: 20px;
+}
+.v-persona-list h3 {
+  margin-block: 0 14px;
+}
+.v-persona-list p {
+  min-height: 72px;
+}
+.v-persona-list a {
+  color: var(--v-primary);
+  font-weight: 700;
 }
 .v-shopper-strip {
   background: #f0e4af;
@@ -2002,15 +2088,39 @@ html[lang="ar"] .v-price small {
 }
 @media (max-width: 767px) {
   .v-transfer-steps,
-  .v-inside-section {
+  .v-inside-section,
+  .v-persona-list {
     grid-template-columns: 1fr;
-    gap: 16px;
+    gap: 0;
   }
   .v-inside-section {
-    padding: 32px 20px;
+    padding: 42px 20px;
+    gap: 22px;
   }
   .v-transfer-steps article {
-    padding: 20px;
+    padding: 22px 12px;
+  }
+  .v-transfer-steps article + article {
+    border-inline-start: 0;
+    border-block-start: 1px solid #d9cec4;
+  }
+  .v-workbench-body {
+    grid-template-columns: 1fr;
+  }
+  .v-workbench-index {
+    flex-direction: row;
+    justify-content: space-between;
+    gap: 4px;
+    border-inline-end: 0;
+    border-block-end: 1px solid #e7ded5;
+    padding: 16px;
+    font-size: 9px;
+  }
+  .v-workbench-page {
+    padding: 24px;
+  }
+  .v-persona-list p {
+    min-height: 0;
   }
   .v-shopper-strip > div {
     gap: 8px;

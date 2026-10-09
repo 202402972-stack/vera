@@ -6,6 +6,7 @@ import { useLanguage } from "@/i18n/LanguageContext";
 import { StoreProvider } from "@/hooks/useStore";
 import { StoreScopeProvider } from "./StoreScope";
 import { request } from "@/platform/api";
+import { Copy } from "lucide-react";
 import "./workspace.css";
 const Admin = lazy(() => import("@/pages/AdminPage"));
 const GalaAdmin = lazy(() => import("@/templates/gala/GalaAdmin"));
@@ -51,7 +52,9 @@ export default function WorkspaceShell({ config }) {
         <meta name="robots" content="noindex,nofollow" />
       </Helmet>
       <header className="workspace-topbar">
-        <Link to="/workspace">VÉRA ← {t("متاجري", "My stores")}</Link>
+        <Link className="workspace-breadcrumb" to="/workspace">
+          VÉRA ← {t("متاجري", "My stores")}
+        </Link>
         {state && (
           <>
             <select
@@ -77,24 +80,31 @@ export default function WorkspaceShell({ config }) {
                 </option>
               ))}
             </select>
-            <span>
+            <span className="workspace-status">
               {state.store.publicationState === "draft"
                 ? t("مسودة", "Draft")
                 : state.store.available
                   ? t("متاح", "Live")
                   : t("غير متاح", "Unavailable")}
             </span>
-            <a href={state.store.url} target="_blank" rel="noreferrer">
-              {t("زيارة المتجر", "Visit store")}
+            <a className="workspace-visit"
+              href={state.store.url + (state.store.publicationState === "draft" ? "?preview=1" : "")}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {state.store.publicationState === "draft"
+                ? t("معاينة المسودة", "Preview draft")
+                : t("زيارة المتجر", "Visit store")}
             </a>
-            <button
+            <button className="workspace-copy" aria-label={t("نسخ رابط المتجر", "Copy store link")}
               onClick={() =>
                 navigator.clipboard.writeText(
                   window.location.origin + state.store.url,
                 )
               }
             >
-              {t("نسخ الرابط", "Copy link")}
+              <Copy size={16} aria-hidden="true" />
+              <span>{t("نسخ الرابط", "Copy link")}</span>
             </button>
           </>
         )}
@@ -111,7 +121,8 @@ export default function WorkspaceShell({ config }) {
       ) : (
         <StoreScopeProvider key={id} store={state.store}>
           <StoreProvider mode="admin">
-            {["overview", "preview"].includes(section) && <LaunchPanel />}
+            {state.store.publicationState === "draft" &&
+              ["overview", "preview"].includes(section) && <LaunchPanel />}
             <Suspense fallback={<p role="status">…</p>}>
               {state.store.template === "gala" ? <GalaAdmin /> : <Admin />}
             </Suspense>

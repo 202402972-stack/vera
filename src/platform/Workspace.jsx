@@ -62,7 +62,7 @@ function StoreCard({ store, templates, onRefresh, onAction, newWorkspace }) {
         <span className="v-eyebrow">{template?.name}</span>
         <h2>{store.name}</h2>
         <div className="v-store-url">
-          <a href={store.url} target="_blank" rel="noreferrer" dir="ltr">
+          <a href={store.url + (store.publicationState === "draft" ? "?preview=1" : "")} target="_blank" rel="noreferrer" dir="ltr">
             {window.location.host}
             {store.url}
           </a>
@@ -107,8 +107,8 @@ function StoreCard({ store, templates, onRefresh, onAction, newWorkspace }) {
           </Button>
           <a
             className="v-icon-link"
-            href={store.url}
-            aria-label={t("زيارة المتجر", "Visit store")}
+            href={store.url + (store.publicationState === "draft" ? "?preview=1" : "")}
+            aria-label={store.publicationState === "draft" ? t("معاينة المسودة", "Preview draft") : t("زيارة المتجر", "Visit store")}
             target="_blank"
             rel="noreferrer"
           >

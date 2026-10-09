@@ -167,8 +167,8 @@ export default function GalaOverview() {
                       "ستظهر الطلبات هنا عندما يتعرف العملاء على منتجاتك.",
                     )}
                   </p>
-                  <Link to="/" target="_blank">
-                    {t("Visit your store", "زيارة المتجر")} ↗
+                  <Link to="/admin?tab=products">
+                    {t("Manage products", "إدارة المنتجات")} ↗
                   </Link>
                 </div>
               )}

@@ -1,0 +1,14 @@
+@media (max-width: 900px) {
+  .gala-store .gala-bottom-nav {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .gala-store .gala-bottom-nav a,
+  .gala-store .gala-bottom-nav button {
+    min-height: 44px;
+    justify-content: center;
+    font-size: 11px;
+  }
+  .gala-store .gala-bottom-nav svg {
+    flex: none;
+  }
+}

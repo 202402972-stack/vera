@@ -73,6 +73,63 @@ test("three-step onboarding resumes and creates a private empty draft without pa
   await expect(page).toHaveURL(/\/workspace\/stores\/\d+\/overview/);
   await expect(page.locator(".launch-panel")).toContainText("Private draft");
 });
+test("mobile landing artwork, owner metrics and compact GALA navigation remain usable", async ({ page, context }) => {
+  await auth(context);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  await expect(page.locator(".v-hero")).toHaveCSS("background-color", "rgb(242, 241, 239)");
+  await expect(page.locator(".v-hero .v-button")).toHaveCSS("background-color", "rgb(116, 63, 55)");
+  await expect(page.locator(".v-intro")).toHaveCSS("opacity", "1");
+  await page.locator(".v-dashboard-frame").scrollIntoViewIfNeeded();
+  await expect.poll(() => page.locator(".v-dashboard-frame img").evaluate((img) => img.naturalWidth)).toBe(390);
+  await page.goto("/owner");
+  const metrics = page.locator(".owner-portal .v-stores-grid .v-panel");
+  await expect(metrics).toHaveCount(6);
+  expect((await metrics.first().boundingBox()).width).toBeGreaterThan(130);
+  await page.goto("/s/gala-owned");
+  await expect(page.locator(".gala-bottom-nav > *")).toHaveCount(4);
+});
+test("store setup suggests a complete address and Atelier design opens from workspace", async ({ page, context }) => {
+  await auth(context);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/workspace/new");
+  await page.getByLabel("Brand name", { exact: true }).fill("My New Brand");
+  await expect(page.getByLabel("Store address", { exact: true })).toHaveValue("my-new-brand");
+  const stores = (await (await page.request.get("/api/platform/stores")).json()).stores;
+  const atelier = stores.find((s) => s.template === "atelier");
+  await page.goto(`/workspace/stores/${atelier.id}/design`);
+  await expect(page.getByRole("heading", { name: "Store design", exact: true })).toBeVisible();
+  await expect(page.locator(".admin-scope .admin-field").first()).toBeVisible();
+  await expect(page.locator(".workspace-visit")).toHaveCount(1);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+test("a new merchant can move straight from setup to the first product", async ({ page, context }) => {
+  await auth(context);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/workspace/new?template=form");
+  await page.getByLabel("Brand name", { exact: true }).fill("First Product House");
+  await expect(page.getByLabel("Store address", { exact: true })).toHaveValue("first-product-house");
+  await page.getByLabel("Selling country", { exact: true }).fill("Egypt");
+  await expect(page.getByRole("button", { name: "Next", exact: true })).toBeEnabled();
+  await page.getByRole("button", { name: "Next", exact: true }).click();
+  await page.getByRole("button", { name: "Next", exact: true }).click();
+  await page.getByRole("button", { name: "Add first product", exact: true }).click();
+  await expect(page).toHaveURL(/\/workspace\/stores\/\d+\/products$/);
+  await page.getByRole("button", { name: "Add product", exact: true }).click();
+  await expect(page.locator(".admin-product-editor")).toBeVisible();
+});
+test("FORM setup opens its working brand and logo editor", async ({ page, context }) => {
+  await auth(context);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/workspace/new?template=form");
+  await page.getByLabel("Brand name", { exact: true }).fill("Logo House");
+  await page.getByLabel("Selling country", { exact: true }).fill("Egypt");
+  await page.getByRole("button", { name: "Next", exact: true }).click();
+  await page.getByRole("button", { name: "Next", exact: true }).click();
+  await page.getByRole("button", { name: "Add your logo", exact: true }).click();
+  await expect(page).toHaveURL(/\/workspace\/stores\/\d+\/brand$/);
+  await expect(page.getByText("Brand logo", { exact: true })).toBeVisible();
+});
 for (const language of ["ar", "en"])
   for (const width of [360, 390, 430, 768, 1440]) {
     test(`workspace mobile task and GALA design ${language} ${width}`, async ({

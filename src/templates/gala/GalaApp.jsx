@@ -13,6 +13,7 @@ import { Header, Footer, Cart } from "./GalaShell";
 import { Home, Catalog, Collections, Product, Information } from "./GalaPages";
 const GalaAdmin = lazy(() => import("./GalaAdmin"));
 import "./gala.css";
+import "./gala-mobile-nav.css";
 function CartPage() {
   const { setCartOpen, t } = useGala();
   useEffect(() => setCartOpen(true), [setCartOpen]);

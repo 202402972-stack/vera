@@ -101,23 +101,18 @@ export default function LandingJourney({ config }) {
             {t("مساحة العمل", "A workspace")}{" "}
             <em>{t("التي تحتاجها.", "for your everyday.")}</em>
           </h2>
-          <div
-            role="tablist"
-            aria-label={t("معاينة مساحة العمل", "Workspace preview")}
-          >
+          <div role="group" aria-label={t("معاينة مساحة العمل", "Workspace preview")}>
             {features.map(([key, ar, en]) => (
               <button
                 key={key}
-                role="tab"
-                aria-selected={active === key}
-                aria-controls="landing-studio-detail"
+                aria-pressed={active === key}
                 onClick={() => setActive(key)}
               >
                 {t(ar, en)}
               </button>
             ))}
           </div>
-          <div id="landing-studio-detail" role="tabpanel">
+          <div id="landing-studio-detail" aria-live="polite">
             <h3>{t(detail[1], detail[2])}</h3>
             <p>{t(detail[3], detail[4])}</p>
             <Link to="/login?intent=create">
@@ -125,19 +120,28 @@ export default function LandingJourney({ config }) {
             </Link>
           </div>
         </div>
-        <figure>
-          <img
-            src="/platform/assets/merchant-studio.png"
-            loading="lazy"
-            alt={t("معاينة لوحة متجر VÉRA", "VÉRA merchant studio preview")}
-          />
-          <figcaption>
-            {t(
-              "معاينة القالب؛ بيانات متجر تجريبي وليست إحصائيات عملاء.",
-              "Template preview; sample store data, not customer statistics.",
-            )}
-          </figcaption>
-        </figure>
+        <div className="v-workbench" aria-label={t("معاينة مساحة العمل", "Workspace preview")}>
+          <div className="v-workbench-head">
+            <b>VÉRA</b>
+            <span>{t("مساحة التاجر", "MERCHANT WORKSPACE")}</span>
+          </div>
+          <div className="v-workbench-body">
+            <div className="v-workbench-index" aria-hidden="true">
+              {features.map(([key, ar, en], index) => (
+                <span key={key} className={active === key ? "is-active" : ""}>
+                  {String(index + 1).padStart(2, "0")} / {t(ar, en)}
+                </span>
+              ))}
+            </div>
+            <div className="v-workbench-page" key={active}>
+              <span className="v-eyebrow">{t("خلف المتجر", "BEHIND THE STOREFRONT")}</span>
+              <h3>{t(detail[1], detail[2])}</h3>
+              <p>{t(detail[3], detail[4])}</p>
+              <div className="v-workbench-rule" />
+              <small>{t("معاينة توضيحية للوظائف الفعلية", "Illustration of working features")}</small>
+            </div>
+          </div>
+        </div>
       </section>
       <section className="v-section v-shopper-strip">
         <span className="v-eyebrow">MADE FOR THE PEOPLE WHO BUY</span>
@@ -163,7 +167,7 @@ export default function LandingJourney({ config }) {
             <em>{t("مساحتك أنت.", "your own space.")}</em>
           </h2>
         </div>
-        <div className="v-transfer-steps">
+        <div className="v-persona-list">
           {config.templates.map((template) => (
             <article key={template.id}>
               <h3>{template.name}</h3>

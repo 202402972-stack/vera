@@ -8,7 +8,7 @@
   border-block-end: 1px solid #ddd4cc;
   position: sticky;
   top: 0;
-  z-index: 40;
+  z-index: 80;
 }
 .admin-dashboard.form-admin {
   --primary: 164 30% 27%;
@@ -95,15 +95,39 @@
 }
 @media (max-width: 767px) {
   .workspace-topbar {
-    padding: 10px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto 44px;
+    height: 64px;
+    padding: 10px 12px;
     gap: 8px;
   }
+  .workspace-breadcrumb,
+  .workspace-status,
+  .workspace-copy span {
+    display: none !important;
+  }
   .workspace-topbar select {
-    max-width: 180px;
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    font-size: 16px;
+  }
+  .workspace-visit {
+    font-size: 11px;
+    white-space: nowrap;
+  }
+  .workspace-copy {
+    justify-content: center;
   }
   .workspace-shell .dashboard-header {
     position: sticky;
-    top: 0;
+    top: 64px;
+    z-index: 39;
+  }
+  .workspace-shell .gs-topbar {
+    position: sticky;
+    top: 64px;
+    z-index: 39;
   }
   .admin-mobile-menu {
     min-height: 44px;
@@ -246,6 +270,89 @@
 .owner-navigation a[aria-current="page"] {
   background: #743f37;
   color: white;
+}
+.owner-navigation a {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+.owner-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+.owner-overview-grid .v-panel {
+  min-width: 0;
+  margin: 0;
+}
+.owner-overview-grid .v-panel h2 {
+  font-size: 24px;
+}
+.owner-overview-grid .v-panel h3 {
+  font-size: 18px;
+  margin-block: 20px 8px;
+}
+.owner-overview-grid .v-panel p {
+  overflow-wrap: anywhere;
+}
+.owner-overview-grid .v-panel a {
+  color: #743f37;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.owner-event-details {
+  margin-block: 16px;
+}
+.owner-event-details summary {
+  cursor: pointer;
+  min-height: 44px;
+}
+.owner-portal .v-stores-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-block: 24px;
+}
+.owner-portal .v-stores-grid .v-panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  margin: 0;
+  text-align: start;
+}
+.owner-portal .v-stores-grid strong {
+  color: #743f37;
+  font: 500 36px/1.1 "Playfair Display", Georgia, serif;
+}
+.owner-portal .v-stores-grid p {
+  margin-block: 10px 0;
+}
+@media (max-width: 767px) {
+  .owner-navigation {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-block: 2px 8px;
+    scroll-snap-type: x proximity;
+  }
+  .owner-navigation a {
+    flex: none;
+    white-space: nowrap;
+    scroll-snap-align: start;
+  }
+  .owner-overview-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .owner-portal .v-stores-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .owner-portal .v-stores-grid .v-panel {
+    padding: 16px;
+  }
+  .owner-portal .v-stores-grid strong {
+    font-size: 28px;
+  }
 }
 .owner-results {
   display: grid;

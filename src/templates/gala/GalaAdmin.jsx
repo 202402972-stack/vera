@@ -516,10 +516,12 @@ export default function GalaAdmin() {
                   >
                     {language === "ar" ? "English" : "العربية"}
                   </button>
-                  <Link to="/" target="_blank">
-                    {copy("View store", "معاينة المتجر")}
-                    <ArrowUpRight size={16} />
-                  </Link>
+                  {!scope && (
+                    <Link to="/" target="_blank">
+                      {copy("View store", "معاينة المتجر")}
+                      <ArrowUpRight size={16} />
+                    </Link>
+                  )}
                 </div>
               </header>
               <main

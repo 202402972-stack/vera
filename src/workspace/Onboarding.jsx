@@ -14,6 +14,7 @@ export default function Onboarding({ config }) {
     [busy, setBusy] = useState(false);
   const id = useRef(crypto.randomUUID()),
     loaded = useRef(false),
+    slugEdited = useRef(false),
     seed = useRef({
       template:
         new URLSearchParams(window.location.search).get("template") ||
@@ -33,6 +34,7 @@ export default function Onboarding({ config }) {
           ? r.drafts.find((d) => d.data.template === explicit)
           : r.drafts[0];
         if (old) id.current = old.id;
+        slugEdited.current = Boolean(old?.data?.slug);
         if (!templates.current.some((x) => x.id === seed.current.template))
           seed.current.template = templates.current[0].id;
         setDraft(
@@ -114,6 +116,12 @@ export default function Onboarding({ config }) {
           "Your 14-day trial starts with your account. Up to 20 stores; publish after your review.",
         )}
       </p>
+      {draft.step === 1 && (
+        <p>
+          {t("لديك متجر بالفعل؟", "Already have a store?")} {" "}
+          <Link to="/workspace/import">{t("انقل بياناته المتاحة", "Bring its available data")}</Link>
+        </p>
+      )}
       <form
         className="v-panel"
         onSubmit={async (e) => {
@@ -125,13 +133,19 @@ export default function Onboarding({ config }) {
           }
           setBusy(true);
           try {
+            const action = e.nativeEvent.submitter?.value;
+            const nextSection = action === "products"
+              ? "products"
+              : action === "logo"
+                ? draft.template === "form" ? "brand" : "design"
+                : "overview";
             await request("/onboarding/" + id.current, "PUT", draft);
             const s = await request(
               "/onboarding/" + id.current + "/commit",
               "POST",
               {},
             );
-            navigate(s.workspaceUrl);
+            navigate(s.workspaceUrl.replace(/\/overview$/, "/" + nextSection));
           } catch (e) {
             setError(e.message);
           } finally {
@@ -149,17 +163,21 @@ export default function Onboarding({ config }) {
                 maxLength={65}
                 value={draft.name}
                 onChange={(e) => {
-                  change("name", e.target.value);
-                  if (!draft.slug)
-                    change(
-                      "slug",
-                      e.target.value
-                        .normalize("NFKD")
-                        .replace(/[^a-z0-9]+/gi, "-")
-                        .toLowerCase()
-                        .replace(/^-|-$/g, "") ||
-                        "store-" + id.current.slice(0, 8),
-                    );
+                  const name = e.target.value;
+                  setDraft((current) => ({
+                    ...current,
+                    name,
+                    slug: slugEdited.current
+                      ? current.slug
+                      : name
+                          .normalize("NFKD")
+                          .replace(/[^a-z0-9]+/gi, "-")
+                          .toLowerCase()
+                          .replace(/^-|-$/g, "")
+                          .slice(0, 40)
+                          .replace(/-$/g, "") ||
+                        (name.trim() ? "store-" + id.current.slice(0, 8) : ""),
+                  }));
                 }}
               />
             </label>
@@ -168,11 +186,16 @@ export default function Onboarding({ config }) {
               <input
                 required
                 dir="ltr"
+                aria-label={t("عنوان المتجر", "Store address")}
                 pattern="[a-z0-9][a-z0-9-]{1,38}[a-z0-9]"
                 value={draft.slug}
-                onChange={(e) => change("slug", e.target.value)}
+                onChange={(e) => {
+                  slugEdited.current = true;
+                  change("slug", e.target.value.toLowerCase());
+                }}
               />
               <small>
+                {draft.slug && <span dir="ltr">/s/{draft.slug} · </span>}
                 {available === null
                   ? ""
                   : available
@@ -251,24 +274,41 @@ export default function Onboarding({ config }) {
             </h2>
             <p>
               {t(
-                "سنجهز مسودة فارغة. أضف الشعار وأول منتج من مساحة المتجر، أو ابدأ بنقل منتجاتك. يمكنك الاستكمال لاحقًا.",
-                "We will prepare an empty draft. Add your logo and first product in your workspace, or import products. You can resume later.",
+                "سنجهز مسودة فارغة. أضف الشعار وأول منتج من مساحة المتجر، أو استكمل لاحقًا.",
+                "We will prepare an empty draft. Add your logo and first product in your workspace, or continue later.",
               )}
             </p>
             <p dir="ltr">
               /s/{draft.slug} · {draft.currency} · {draft.country}
+            </p>
+            <p>
+              {t(
+                "تقدر تبدأ بإضافة أول منتج الآن، أو تفتح مساحة المتجر وتكمل في وقت مناسب.",
+                "Add your first product now, or open your workspace and continue later.",
+              )}
             </p>
           </>
         )}
         <div className="v-actions">
           <button
             className="v-button"
+            value="overview"
             disabled={busy || (draft.step === 1 && !available)}
           >
             {draft.step === 3
               ? t("جهّز المسودة", "Prepare draft")
               : t("التالي", "Next")}
           </button>
+          {draft.step === 3 && (
+            <button className="v-button v-button-secondary" value="products" disabled={busy}>
+              {t("أضف أول منتج", "Add first product")}
+            </button>
+          )}
+          {draft.step === 3 && (
+            <button type="submit" className="v-text-link" value="logo" disabled={busy}>
+              {t("أضف شعارك", "Add your logo")}
+            </button>
+          )}
           {draft.step > 1 && (
             <button
               type="button"
