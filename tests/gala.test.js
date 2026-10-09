@@ -1,3 +1,4 @@
+import { publishFixture } from "./helpers/merchant-fixture.js";
 import test, { before, after } from "node:test";
 import assert from "node:assert/strict";
 import { mkdtempSync, rmSync } from "node:fs";
@@ -45,6 +46,8 @@ before(async () => {
   server = app.listen(0, "127.0.0.1");
   await new Promise((r) => server.once("listening", r));
   base = "http://127.0.0.1:" + server.address().port;
+  publishFixture(core, db, { inTenant }, shop);
+  publishFixture(core, db, { inTenant }, other);
   const login = await request(shop.url + "/api/admin/login", "POST", {
     password,
   });

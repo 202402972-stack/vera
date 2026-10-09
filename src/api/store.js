@@ -1,39 +1,51 @@
 import { storeBase } from "@/lib/store-scope";
 import { getLanguage } from "@/i18n/LanguageContext";
 import { localizeProduct } from "@/i18n/content";
-export async function api(path, options = {}) {
-  const response = await fetch(`${storeBase}/api${path}`, {
-    credentials: "same-origin",
-    ...options,
-    headers: {
-      ...(options.body instanceof FormData
-        ? {}
-        : { "Content-Type": "application/json" }),
-      ...options.headers,
-    },
-  });
-  if (response.status === 204) return null;
-  let body;
-  try {
-    body = await response.json();
-  } catch (error) {
-    if (error.name === "AbortError") throw error;
-    throw new Error(
-      "The service is temporarily unavailable. Please try again.",
+export const api = createStoreApi(storeBase);
+export function createStoreApi(base, storeId = null, signal) {
+  return async function api(path, options = {}) {
+    const response = await fetch(
+      `${base}/api${path}${new URLSearchParams(window.location.search).get("preview") === "1" ? (path.includes("?") ? "&" : "?") + "preview=1" : ""}`,
+      {
+        credentials: "same-origin",
+        ...options,
+        signal:
+          signal && options.signal
+            ? AbortSignal.any([signal, options.signal])
+            : options.signal || signal,
+        headers: {
+          ...(options.body instanceof FormData
+            ? {}
+            : { "Content-Type": "application/json" }),
+          ...options.headers,
+        },
+      },
     );
-  }
-  if (!response.ok) {
-    if (
-      response.status === 401 &&
-      path.startsWith("/admin/") &&
-      path !== "/admin/login"
-    )
-      window.dispatchEvent(new Event("admin-session-expired"));
-    const error = new Error(body.error || "Request failed.");
-    error.status = response.status;
-    throw error;
-  }
-  return body;
+    if (response.status === 204) return null;
+    let body;
+    try {
+      body = await response.json();
+    } catch (error) {
+      if (error.name === "AbortError") throw error;
+      throw new Error(
+        "The service is temporarily unavailable. Please try again.",
+      );
+    }
+    if (!response.ok) {
+      if (
+        response.status === 401 &&
+        path.startsWith("/admin/") &&
+        path !== "/admin/login"
+      )
+        window.dispatchEvent(
+          new CustomEvent("admin-session-expired", { detail: { storeId } }),
+        );
+      const error = new Error(body.error || "Request failed.");
+      error.status = response.status;
+      throw error;
+    }
+    return body;
+  };
 }
 export const jsonRequest = (method, body) => ({
   method,

@@ -47,9 +47,7 @@ test("brand customization publishes actual storefront tokens and protects unsave
     await page
       .getByRole("button", { name: "Publish brand", exact: true })
       .click();
-    await expect(
-      page.getByText("Changes published to your store."),
-    ).toBeVisible();
+    await expect(page.getByText("Changes saved to your store.")).toBeVisible();
     const storefront = await page.context().newPage();
     await storefront.goto("/");
     await expect(storefront.locator(".store-text-wordmark")).toHaveText(
@@ -59,7 +57,7 @@ test("brand customization publishes actual storefront tokens and protects unsave
       "A collection made to last.",
     );
     const color = await storefront.evaluate(() =>
-      getComputedStyle(document.documentElement)
+      getComputedStyle(document.querySelector(".store-theme"))
         .getPropertyValue("--primary")
         .trim(),
     );
@@ -89,9 +87,7 @@ test("commerce settings, coupon, checkout, admin shipment and private receipt wo
     await page
       .getByRole("button", { name: "Publish settings", exact: true })
       .click();
-    await expect(
-      page.getByText("Changes published to your store."),
-    ).toBeVisible();
+    await expect(page.getByText("Changes saved to your store.")).toBeVisible();
     await page
       .getByRole("button", { name: "Add discount", exact: true })
       .click();

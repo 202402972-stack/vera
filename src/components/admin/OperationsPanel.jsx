@@ -1,5 +1,6 @@
+import { useStoreApi, Link } from "@/workspace/StoreScope";
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+
 import {
   ArrowUpRight,
   Package,
@@ -9,13 +10,14 @@ import {
   Check,
   ArrowRight,
 } from "lucide-react";
-import { api, formatCurrency } from "@/api/store";
+import { formatCurrency } from "@/api/store";
 import { useStore } from "@/hooks/useStore";
 import { useLanguage, localizeView } from "@/i18n/LanguageContext";
 import { Panel, Notice, Busy } from "./AdminUI";
 import AnalyticsPanel from "./AnalyticsPanel";
 
 export default function OperationsPanel() {
+  const api = useStoreApi();
   const { t, language, date } = useLanguage();
   const { store } = useStore();
   const [data, setData] = useState(null),
@@ -39,7 +41,7 @@ export default function OperationsPanel() {
       live = false;
       clearInterval(timer);
     };
-  }, []);
+  }, [api]);
   if (!data) return error ? <Notice error>{error}</Notice> : <Busy />;
   const tasks = [
     [

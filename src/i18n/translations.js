@@ -1,11 +1,13 @@
 import { studioTranslations } from "./studio.js";
 export const translations = {
+  "Changes saved to your store.": "حُفظت تعديلات المتجر.",
   "Awaiting payment": "بانتظار تأكيد الدفع",
   Paid: "مدفوع",
   "Payment failed": "فشل الدفع",
   "Payment expired": "انتهت مهلة الدفع",
   Refunded: "تم رد المبلغ",
-  "Payment received; contact the store": "وصل الدفع بعد الإلغاء؛ تواصل مع المتجر",
+  "Payment received; contact the store":
+    "وصل الدفع بعد الإلغاء؛ تواصل مع المتجر",
   "Total paid": "المجموع المدفوع",
   "Order total": "مجموع الطلب",
   "Total due on delivery": "المبلغ المطلوب عند الاستلام",

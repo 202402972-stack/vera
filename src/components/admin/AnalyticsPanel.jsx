@@ -1,3 +1,4 @@
+import { useStoreApi } from "@/workspace/StoreScope";
 import ResponsiveTable from "./ResponsiveTable";
 import { useLanguage, localizeView } from "@/i18n/LanguageContext";
 import React, {
@@ -27,7 +28,7 @@ import {
   Package,
   Search,
 } from "lucide-react";
-import { api } from "@/api/store";
+
 import { useStore } from "@/hooks/useStore";
 import { Button } from "@/components/ui/button";
 import { Panel, Notice, Busy } from "./AdminUI";
@@ -206,6 +207,7 @@ function TrafficChart({ daily, days }) {
   );
 }
 export default function AnalyticsPanel({ compact = false }) {
+  const api = useStoreApi();
   const { t, date } = useLanguage();
   const { store } = useStore();
   const [visitPage, setVisitPage] = useState(1),
@@ -236,7 +238,7 @@ export default function AnalyticsPanel({ compact = false }) {
     return () => {
       current = false;
     };
-  }, [journey, eventPage]);
+  }, [journey, eventPage, api]);
   useEffect(() => {
     if (journey)
       journeyRef.current?.scrollIntoView({
@@ -251,7 +253,7 @@ export default function AnalyticsPanel({ compact = false }) {
     } catch (e) {
       setError(e.message);
     }
-  }, [days, visitPage]);
+  }, [api, days, visitPage]);
   useEffect(() => {
     reload();
     const timer = setInterval(reload, 30000);

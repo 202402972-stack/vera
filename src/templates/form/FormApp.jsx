@@ -1,3 +1,4 @@
+import Collections from "@/components/commerce/Collections";
 import React from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import { Helmet } from "react-helmet";
@@ -29,6 +30,8 @@ export default function FormApp() {
         <main id="form-main" tabIndex={-1}>
           <Routes>
             <Route path="/" element={<Home />} />
+            <Route path="/collections" element={<Collections />} />
+            <Route path="/track" element={<RetailAccount />} />
             <Route path="/shop" element={<Catalog />} />
             <Route path="/saved" element={<Catalog saved />} />
             <Route path="/product/:id" element={<Product />} />

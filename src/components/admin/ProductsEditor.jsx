@@ -1,3 +1,4 @@
+import { useStoreApi } from "@/workspace/StoreScope";
 import { StructuredField } from "@/templates/gala/StructuredField";
 import CollectionsPanel from "./CollectionsPanel";
 import { useSearchParams } from "react-router-dom";
@@ -22,7 +23,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { api, jsonRequest, formatCurrency } from "@/api/store";
+import { jsonRequest, formatCurrency } from "@/api/store";
 import { useStore } from "@/hooks/useStore";
 import {
   Panel,
@@ -40,10 +41,11 @@ const slug = (v) =>
     .replace(/^-|-$/g, "")
     .slice(0, 70);
 export default function ProductsEditor({ notify }) {
+  const api = useStoreApi();
   const { t, language } = useLanguage();
   const [uploadCount] = useUploads();
   const { store } = useStore();
-  const [params] = useSearchParams();
+  const [params, setParams] = useSearchParams();
   const requestedProduct = params.get("product");
   useEffect(() => {
     if (!requestedProduct) return;
@@ -54,7 +56,8 @@ export default function ProductsEditor({ notify }) {
         setIsNew(false);
       })
       .catch((e) => setError(e.message));
-  }, [requestedProduct]);
+  }, [api, requestedProduct]);
+  const [editorSection, setEditorSection] = useState("basic");
   const [savedProduct, setSavedProduct] = useState("");
   const [products, setProducts] = useState(null),
     [rawEditor, setEditor] = useState(null),
@@ -76,7 +79,7 @@ export default function ProductsEditor({ notify }) {
           if (page > data.pages) setPage(data.pages);
         })
         .catch((e) => setError(e.message)),
-    [page, query],
+    [api, page, query],
   );
   useEffect(() => {
     void reload();
@@ -93,7 +96,9 @@ export default function ProductsEditor({ notify }) {
   useEffect(() => {
     if (editorId)
       editorRef.current?.scrollIntoView({
-        behavior: "smooth",
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "instant"
+          : "smooth",
         block: "start",
       });
   }, [editorId]);
@@ -113,7 +118,30 @@ export default function ProductsEditor({ notify }) {
     image_url: null,
     options: [],
   });
+  const clearProductLink = () => {
+    const next = new URLSearchParams(params);
+    next.delete("product");
+    setParams(next, { replace: true });
+  };
+  const closeEditor = () => {
+    setEditor(null);
+    clearProductLink();
+  };
+  const discardEditor = () => {
+    if (
+      (isNew || JSON.stringify(rawEditor) !== savedProduct) &&
+      !window.confirm(
+        language === "ar"
+          ? "تجاهل التعديلات غير المحفوظة؟"
+          : "Discard unsaved changes?",
+      )
+    )
+      return;
+    closeEditor();
+  };
   function create() {
+    clearProductLink();
+    setEditorSection("basic");
     setEditor({
       id: `product-${crypto.randomUUID().slice(0, 8)}`,
       title: "",
@@ -130,6 +158,8 @@ export default function ProductsEditor({ notify }) {
     setError("");
   }
   function edit(p) {
+    setEditorSection("basic");
+    setParams({ ...Object.fromEntries(params), product: p.id });
     const original = products.find((x) => x.id === p.id) || p;
     setEditor(structuredClone(original));
     setSavedProduct(JSON.stringify(original));
@@ -150,7 +180,7 @@ export default function ProductsEditor({ notify }) {
         jsonRequest(isNew ? "POST" : "PUT", rawEditor),
       );
       await reload();
-      setEditor(null);
+      closeEditor();
       notify(isNew ? "Product added." : "Product updated.");
     } catch (e) {
       setError(e.message);
@@ -164,7 +194,7 @@ export default function ProductsEditor({ notify }) {
       await api(`/admin/products/${deleting.id}`, {
         method: "DELETE",
       });
-      if (editor?.id === deleting.id) setEditor(null);
+      if (editor?.id === deleting.id) closeEditor();
       setDeleting(null);
       await reload();
       notify("Product deleted. Existing orders keep their original details.");
@@ -218,226 +248,247 @@ export default function ProductsEditor({ notify }) {
           )}
         </Notice>
       )}
-      <Panel
-        title="Your collection"
-        subtitle={`${metadata.total} products · Existing catalogue, ready to edit.`}
-        icon={Package}
-        action={
-          <Button onClick={create} disabled={uploadCount > 0}>
-            <Plus size={16} className="mr-2" /> Add product
-          </Button>
-        }
-      >
-        <div className="mb-5">
-          <input
-            aria-label="Search products"
-            placeholder="Search products…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-        <div className="admin-table-wrap">
-          <ResponsiveTable>
-            <thead>
-              <tr>
-                <th>Product</th>
-                <th>Price</th>
-                <th>Stock</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {visible.map((p) => (
-                <tr key={p.id}>
-                  <td>
-                    <div className="flex items-center gap-3 min-w-[180px]">
-                      <img
-                        src={p.image}
-                        alt={p.title}
-                        className="w-10 h-12 rounded-md object-cover"
-                      />
-                      <div>
-                        <strong>{p.title}</strong>
-                        <p className="text-[10px] text-muted-foreground">
-                          {p.variants.length} styles · {p.subtitle}
-                        </p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="whitespace-nowrap">
-                    {formatCurrency(
-                      p.variants[0].sale_price_in_cents ??
-                        p.variants[0].price_in_cents,
-                      p.variants[0].currency_info,
-                    )}
-                  </td>
-                  <td>
-                    {p.variants.some((v) => !v.manage_inventory)
-                      ? "Unlimited"
-                      : p.variants.reduce(
-                          (n, v) => n + v.inventory_quantity,
-                          0,
-                        )}
-                  </td>
-                  <td>
-                    <span className={`admin-status ${p.status}`}>
-                      {p.status}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="flex gap-1">
-                      <button
-                        className="admin-action-button"
-                        disabled={uploadCount > 0}
-                        onClick={() => edit(p)}
-                        aria-label={`Edit ${p.title}`}
-                      >
-                        <Pencil size={15} />
-                      </button>
-                      <button
-                        className="admin-action-button"
-                        disabled={uploadCount > 0}
-                        onClick={() => {
-                          const copy = structuredClone(
-                            products.find((x) => x.id === p.id),
-                          );
-                          const oldVariants = copy.variants;
-                          copy.id = `${slug(copy.title) || "product"}-${crypto.randomUUID().slice(0, 6)}`;
-                          copy.title = `${copy.title} Copy`;
-                          if (copy.translations?.ar?.title)
-                            copy.translations.ar.title += " — نسخة";
-                          copy.status = "draft";
-                          copy.variants = copy.variants.map((v, i) => ({
-                            ...v,
-                            id: `${copy.id}-style-${i}`,
-                          }));
-                          if (copy.translations?.ar?.variants)
-                            copy.translations.ar.variants =
-                              copy.translations.ar.variants
-                                .map((tr) => ({
-                                  ...tr,
-                                  id: copy.variants[
-                                    oldVariants.findIndex((v) => v.id === tr.id)
-                                  ]?.id,
-                                }))
-                                .filter((tr) => tr.id);
-                          delete copy._version;
-                          setEditor(copy);
-                          setIsNew(true);
-                        }}
-                        aria-label={`Duplicate ${p.title}`}
-                      >
-                        <Copy size={15} />
-                      </button>
-                      <button
-                        className="admin-action-button"
-                        onClick={() =>
-                          move(
-                            products.findIndex((x) => x.id === p.id),
-                            -1,
-                          )
-                        }
-                        disabled={
-                          uploadCount > 0 ||
-                          busy ||
-                          query !== "" ||
-                          (page === 1 &&
-                            products.findIndex((x) => x.id === p.id) === 0)
-                        }
-                        aria-label={`Move ${p.title} up`}
-                      >
-                        <ArrowUp size={15} />
-                      </button>
-                      <button
-                        className="admin-action-button"
-                        onClick={() =>
-                          move(
-                            products.findIndex((x) => x.id === p.id),
-                            1,
-                          )
-                        }
-                        disabled={
-                          uploadCount > 0 ||
-                          busy ||
-                          query !== "" ||
-                          (page === metadata.pages &&
-                            products.findIndex((x) => x.id === p.id) ===
-                              products.length - 1)
-                        }
-                        aria-label={`Move ${p.title} down`}
-                      >
-                        <ArrowDown size={15} />
-                      </button>
-                      <button
-                        className="admin-action-button"
-                        disabled={uploadCount > 0}
-                        onClick={() => setDeleting(p)}
-                        aria-label={`Delete ${p.title}`}
-                      >
-                        <Trash2 size={15} />
-                      </button>
-                    </div>
-                  </td>
+      {!editor && (
+        <Panel
+          title="Your collection"
+          subtitle={`${metadata.total} products · Existing catalogue, ready to edit.`}
+          icon={Package}
+          action={
+            <Button onClick={create} disabled={uploadCount > 0}>
+              <Plus size={16} className="mr-2" /> Add product
+            </Button>
+          }
+        >
+          <div className="mb-5">
+            <input
+              aria-label="Search products"
+              placeholder="Search products…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <div className="admin-table-wrap">
+            <ResponsiveTable className="admin-products-table">
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Price</th>
+                  <th>Stock</th>
+                  <th>Status</th>
+                  <th>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </ResponsiveTable>
-        </div>
-        {!visible.length && (
-          <div className="admin-empty">
-            No matching products. Add your first product to get started.
+              </thead>
+              <tbody>
+                {visible.map((p) => (
+                  <tr key={p.id}>
+                    <td>
+                      <div className="flex items-center gap-3 min-w-[180px]">
+                        <img
+                          src={p.image}
+                          alt={p.title}
+                          className="w-10 h-12 rounded-md object-cover"
+                        />
+                        <div>
+                          <strong>{p.title}</strong>
+                          <p className="text-[10px] text-muted-foreground">
+                            {p.variants.length} styles · {p.subtitle}
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="whitespace-nowrap">
+                      {formatCurrency(
+                        p.variants[0].sale_price_in_cents ??
+                          p.variants[0].price_in_cents,
+                        p.variants[0].currency_info,
+                      )}
+                    </td>
+                    <td>
+                      {p.variants.some((v) => !v.manage_inventory)
+                        ? "Unlimited"
+                        : p.variants.reduce(
+                            (n, v) => n + v.inventory_quantity,
+                            0,
+                          )}
+                    </td>
+                    <td>
+                      <span className={`admin-status ${p.status}`}>
+                        {p.status}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="flex gap-1">
+                        <button
+                          className="admin-action-button"
+                          disabled={uploadCount > 0}
+                          onClick={() => edit(p)}
+                          aria-label={`Edit ${p.title}`}
+                        >
+                          <Pencil size={15} />
+                        </button>
+                        <button
+                          className="admin-action-button"
+                          disabled={uploadCount > 0}
+                          onClick={() => {
+                            const copy = structuredClone(
+                              products.find((x) => x.id === p.id),
+                            );
+                            const oldVariants = copy.variants;
+                            copy.id = `${slug(copy.title) || "product"}-${crypto.randomUUID().slice(0, 6)}`;
+                            copy.title = `${copy.title} Copy`;
+                            if (copy.translations?.ar?.title)
+                              copy.translations.ar.title += " — نسخة";
+                            copy.status = "draft";
+                            copy.variants = copy.variants.map((v, i) => ({
+                              ...v,
+                              id: `${copy.id}-style-${i}`,
+                            }));
+                            if (copy.translations?.ar?.variants)
+                              copy.translations.ar.variants =
+                                copy.translations.ar.variants
+                                  .map((tr) => ({
+                                    ...tr,
+                                    id: copy.variants[
+                                      oldVariants.findIndex(
+                                        (v) => v.id === tr.id,
+                                      )
+                                    ]?.id,
+                                  }))
+                                  .filter((tr) => tr.id);
+                            delete copy._version;
+                            setEditor(copy);
+                            setIsNew(true);
+                          }}
+                          aria-label={`Duplicate ${p.title}`}
+                        >
+                          <Copy size={15} />
+                        </button>
+                        <button
+                          className="admin-action-button"
+                          onClick={() =>
+                            move(
+                              products.findIndex((x) => x.id === p.id),
+                              -1,
+                            )
+                          }
+                          disabled={
+                            uploadCount > 0 ||
+                            busy ||
+                            query !== "" ||
+                            (page === 1 &&
+                              products.findIndex((x) => x.id === p.id) === 0)
+                          }
+                          aria-label={`Move ${p.title} up`}
+                        >
+                          <ArrowUp size={15} />
+                        </button>
+                        <button
+                          className="admin-action-button"
+                          onClick={() =>
+                            move(
+                              products.findIndex((x) => x.id === p.id),
+                              1,
+                            )
+                          }
+                          disabled={
+                            uploadCount > 0 ||
+                            busy ||
+                            query !== "" ||
+                            (page === metadata.pages &&
+                              products.findIndex((x) => x.id === p.id) ===
+                                products.length - 1)
+                          }
+                          aria-label={`Move ${p.title} down`}
+                        >
+                          <ArrowDown size={15} />
+                        </button>
+                        <button
+                          className="admin-action-button"
+                          disabled={uploadCount > 0}
+                          onClick={() => setDeleting(p)}
+                          aria-label={`Delete ${p.title}`}
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </ResponsiveTable>
           </div>
-        )}
-        {metadata.pages > 1 && (
-          <div className="flex justify-between items-center gap-3 mt-5 text-xs">
-            <span>
-              {page} of {metadata.pages}
-            </span>
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={uploadCount > 0 || page <= 1}
-                onClick={() => setPage((p) => p - 1)}
-              >
-                Previous
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={uploadCount > 0 || page >= metadata.pages}
-                onClick={() => setPage((p) => p + 1)}
-              >
-                Next
-              </Button>
+          {!visible.length && (
+            <div className="admin-empty">
+              No matching products. Add your first product to get started.
             </div>
-          </div>
-        )}
-      </Panel>
+          )}
+          {metadata.pages > 1 && (
+            <div className="flex justify-between items-center gap-3 mt-5 text-xs">
+              <span>
+                {page} of {metadata.pages}
+              </span>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={uploadCount > 0 || page <= 1}
+                  onClick={() => setPage((p) => p - 1)}
+                >
+                  Previous
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={uploadCount > 0 || page >= metadata.pages}
+                  onClick={() => setPage((p) => p + 1)}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
+        </Panel>
+      )}
       {editor && (
         <form
           ref={editorRef}
           data-dirty={isNew || JSON.stringify(rawEditor) !== savedProduct}
           onSubmit={save}
-          className="admin-product-editor space-y-6"
+          className={
+            "admin-product-editor space-y-6 editor-section-" + editorSection
+          }
         >
+          <nav className="product-editor-sections">
+            {[
+              ["basic", "أساسي", "Basic"],
+              ["images", "الصور", "Images"],
+              ["variants", "الخيارات والمخزون", "Options & inventory"],
+              ["details", "التفاصيل والعرض", "Details & merchandising"],
+            ].map(([k, ar, en]) => (
+              <button
+                type="button"
+                key={k}
+                aria-current={editorSection === k ? "page" : undefined}
+                onClick={() => setEditorSection(k)}
+              >
+                {language === "ar" ? ar : en}
+              </button>
+            ))}
+            <Button
+              type="button"
+              variant="ghost"
+              disabled={uploadCount > 0}
+              onClick={discardEditor}
+              aria-label="Close product editor"
+            >
+              <X size={18} />
+            </Button>
+          </nav>
           <Panel
             title={isNew ? "Create a product" : `Edit ${editor.title}`}
             icon={Pencil}
-            action={
-              <Button
-                type="button"
-                variant="ghost"
-                disabled={uploadCount > 0}
-                onClick={() => setEditor(null)}
-                aria-label="Close product editor"
-              >
-                <X size={18} />
-              </Button>
-            }
           >
             <Notice>
               {language === "ar"
@@ -619,7 +670,11 @@ export default function ProductsEditor({ notify }) {
           </Panel>
           <Panel
             title="Styles, prices & inventory"
-            subtitle={`Enter prices in ${store.checkout.currency} (${store.checkout.symbol}), for example 65.00. Currency is managed in Footer & settings.`}
+            subtitle={
+              language === "ar"
+                ? `أدخل الأسعار بعملة ${store.checkout.currency} (${store.checkout.symbol})، مثل 65.00. تُراجع العملة من الإعدادات المالية.`
+                : `Enter prices in ${store.checkout.currency} (${store.checkout.symbol}), for example 65.00. Review currency in Financial settings.`
+            }
             icon={Package}
           >
             {editor.variants.map((v, i) => (
@@ -657,7 +712,7 @@ export default function ProductsEditor({ notify }) {
                     required
                     hint="A colour, size or other option."
                   />
-                  {store._template?.renderer === "gala" && (
+                  {true && (
                     <>
                       <Field
                         label={language === "ar" ? "رمز المنتج SKU" : "SKU"}
@@ -797,7 +852,7 @@ export default function ProductsEditor({ notify }) {
               <Plus size={16} className="mr-2" /> Add style / size
             </Button>
           </Panel>
-          {store._template?.renderer === "gala" && (
+          {true && (
             <Panel
               title={
                 language === "ar"
@@ -928,12 +983,12 @@ export default function ProductsEditor({ notify }) {
               )}
             </Notice>
           )}
-          <div className="sticky bottom-4 bg-card/95 border border-border rounded-xl p-4 flex justify-between items-center backdrop-blur shadow-lg">
+          <div className="admin-savebar sticky bottom-4 bg-card/95 border border-border rounded-xl p-4 flex justify-between items-center backdrop-blur shadow-lg">
             <Button
               type="button"
               variant="ghost"
               disabled={uploadCount > 0}
-              onClick={() => setEditor(null)}
+              onClick={discardEditor}
             >
               Cancel
             </Button>

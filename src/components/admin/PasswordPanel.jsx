@@ -1,7 +1,9 @@
+import { useStoreApi } from "@/workspace/StoreScope";
 import React, { useState } from "react";
-import { api, jsonRequest } from "@/api/store";
+import { jsonRequest } from "@/api/store";
 import { useLanguage } from "@/i18n/LanguageContext";
 export default function PasswordPanel() {
+  const api = useStoreApi();
   const { language } = useLanguage();
   const ar = language === "ar";
   const [busy, setBusy] = useState(false),

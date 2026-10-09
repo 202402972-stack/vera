@@ -32,7 +32,7 @@ for (const locale of ["en", "ar"]) {
       await trigger.click();
       await expect(panel).toBeVisible();
       await expect(trigger).toHaveAttribute("aria-expanded", "true");
-      await expect(panel.locator("a")).toHaveCount(4);
+      await expect(panel.locator("a")).toHaveCount(7);
       await expect(panel.locator("button")).toHaveCount(1);
       const box = await panel.boundingBox();
       expect(box.width).toBeLessThanOrEqual(209);
@@ -70,7 +70,7 @@ for (const locale of ["en", "ar"]) {
       await expect(panel).toBeHidden();
       await expect(trigger).toBeFocused();
       await trigger.click();
-      await page.mouse.click(width / 2, 350);
+      await page.mouse.click(1, 600);
       await expect(panel).toBeHidden();
       await trigger.click();
       await panel.locator('a[href="/#story"]').click();
@@ -168,9 +168,11 @@ for (const locale of ["en", "ar"]) {
           })
           .click();
       }
+      if (!(await page.locator(".admin-tabs").isVisible()))
+        await page.locator(".dashboard-header .admin-mobile-menu").click();
       await expect(page.locator(".admin-tabs")).toBeVisible();
       const tabs = await page.locator(".admin-tab").all();
-      expect(tabs).toHaveLength(13);
+      expect(tabs).toHaveLength(17);
       for (const tab of tabs) {
         const r = await tab.boundingBox();
         expect(r.x).toBeGreaterThanOrEqual(0);
@@ -178,8 +180,14 @@ for (const locale of ["en", "ar"]) {
       }
       const last = await tabs.at(-1).boundingBox();
       const nav = await page.locator(".admin-tabs").boundingBox();
-      expect(last.width).toBeGreaterThan(nav.width * 0.25);
-      expect(last.width).toBeLessThan(nav.width * 0.4);
+      if (width < 768) {
+        expect(last.width).toBeGreaterThan(nav.width * 0.8);
+        await page.keyboard.press("Escape");
+        await expect(page.locator(".admin-tabs")).toBeHidden();
+      } else {
+        expect(last.width).toBeGreaterThan(nav.width * 0.25);
+        expect(last.width).toBeLessThan(nav.width * 0.4);
+      }
       expect(
         await page.evaluate(
           () => document.documentElement.scrollWidth <= innerWidth,

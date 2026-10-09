@@ -1,3 +1,4 @@
+import { stripePlan } from "./pricing.js";
 import Stripe from "stripe";
 import express from "express";
 import { sql, audit } from "./core.js";
@@ -46,8 +47,14 @@ export function registerWebhook(app) {
           const store = sql("SELECT * FROM platform_stores WHERE id=?").get(
             Number(sub.metadata.storeId),
           );
+          const snapshot = JSON.parse(store?.billing_plan_snapshot || "null");
           const item = sub.items.data.find(
-            (i) => i.price.id === process.env.STRIPE_PRICE_ID,
+            (i) =>
+              i.price.id ===
+                (snapshot?.provider_reference || process.env.STRIPE_PRICE_ID) &&
+              (!snapshot ||
+                (i.price.currency.toUpperCase() === snapshot.currency &&
+                  i.price.unit_amount === snapshot.amount_minor)),
           );
           if (
             store &&
@@ -126,6 +133,18 @@ export function registerBilling(app, owned, rate) {
             store.id,
           );
         }
+        const price = await stripe.prices.retrieve(process.env.STRIPE_PRICE_ID);
+        const plan = stripePlan(price);
+        if (req.body.planId && req.body.planId !== plan.id)
+          return res
+            .status(409)
+            .json({
+              error:
+                "The billing plan changed. Review the actual charge again.",
+            });
+        sql(
+          "UPDATE platform_stores SET billing_plan_snapshot=? WHERE id=?",
+        ).run(JSON.stringify(plan), store.id);
         const session = await stripe.checkout.sessions.create(
           {
             mode: "subscription",

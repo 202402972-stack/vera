@@ -1,20 +1,25 @@
-import React, { useEffect, useState } from "react";
+import { useStoreApi } from "@/workspace/StoreScope";
+import React, { useEffect, useState, useCallback } from "react";
 import { useLanguage } from "@/i18n/LanguageContext";
-import { api, jsonRequest } from "@/api/store";
+import { jsonRequest } from "@/api/store";
 import { Panel, Field, Notice, Busy, SaveButton } from "./AdminUI";
 export default function PaymentsPanel({ notify }) {
+  const api = useStoreApi();
   const { language } = useLanguage(),
     t = (en, ar) => (language === "ar" ? ar : en),
     [value, setValue] = useState(null),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
-  const reload = () =>
-    api("/admin/payments")
-      .then(setValue)
-      .catch((e) => setError(e.message));
+  const reload = useCallback(
+    () =>
+      api("/admin/payments")
+        .then(setValue)
+        .catch((e) => setError(e.message)),
+    [api],
+  );
   useEffect(() => {
     reload();
-  }, []);
+  }, [reload]);
   const set = (k, v) => setValue((old) => ({ ...old, [k]: v }));
   return (
     <div className="space-y-6">

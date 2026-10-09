@@ -1869,10 +1869,10 @@ html[lang="ar"] .v-price small {
 }
 .v-reveal {
   opacity: 0;
-  transform: translateY(18px);
+  transform: translateY(10px);
   transition:
-    opacity 0.65s ease,
-    transform 0.65s ease;
+    opacity var(--motion-section, 440ms) var(--motion-ease, ease),
+    transform var(--motion-section, 440ms) var(--motion-ease, ease);
 }
 .v-reveal.v-revealed {
   opacity: 1;
@@ -1926,4 +1926,96 @@ html[lang="ar"] .v-price small {
 }
 .v-template:nth-of-type(even) .v-template-image {
   background: #dce8ef;
+}
+.v-transfer-steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
+  margin: 44px 0;
+}
+.v-transfer-steps article {
+  border-block-start: 1px solid #b49473;
+  padding: 24px;
+  background: #fff9;
+}
+.v-transfer-steps h3 {
+  font-family: "Playfair Display", "Amiri", Georgia, serif;
+  font-size: 28px;
+  margin: 18px 0;
+}
+.v-transfer-steps p {
+  line-height: 1.85;
+}
+.v-transfer-steps article > span {
+  color: #743f37;
+  font-size: 13px;
+}
+.v-inside-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  background: #e9e4da;
+}
+.v-inside-section [role="tablist"] {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.v-inside-section [role="tab"] {
+  padding: 12px 16px;
+  border: 1px solid #b49473;
+  background: transparent;
+}
+.v-inside-section [aria-selected="true"] {
+  background: #743f37;
+  color: white;
+}
+.v-inside-section [role="tabpanel"] {
+  padding-block: 24px;
+  min-height: 180px;
+}
+.v-inside-section img {
+  width: 100%;
+  aspect-ratio: 4/3;
+  object-fit: contain;
+}
+.v-inside-section figcaption {
+  font-size: 12px;
+  color: #737365;
+  padding-block: 12px;
+}
+.v-shopper-strip {
+  background: #f0e4af;
+}
+.v-shopper-strip > div {
+  display: flex;
+  gap: 30px;
+  flex-wrap: wrap;
+}
+.v-move-section .v-actions {
+  flex-wrap: wrap;
+}
+.v-button-secondary {
+  background: transparent !important;
+  color: #743f37 !important;
+  border: 1px solid #743f37 !important;
+}
+@media (max-width: 767px) {
+  .v-transfer-steps,
+  .v-inside-section {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .v-inside-section {
+    padding: 32px 20px;
+  }
+  .v-transfer-steps article {
+    padding: 20px;
+  }
+  .v-shopper-strip > div {
+    gap: 8px;
+  }
+  .v-shopper-strip > div p {
+    width: 100%;
+  }
 }

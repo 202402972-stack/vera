@@ -27,11 +27,25 @@ for (const [sub, email] of [
     u.id,
     Date.now() + 86400000,
   );
-  provision(u, {
+  const fixture = provision(u, {
     name: sub === "alice" ? "Maison Véra" : "Second House",
     slug: sub === "alice" ? "maison-vera" : "second-house",
     template: "atelier",
     password: "test-private-password-123",
+  });
+  sql(
+    "UPDATE platform_stores SET publication_state='published' WHERE id=?",
+  ).run(fixture.id);
+  const { catalogue } = await import("../../src/data/products.js");
+  const { inTenant } = await import("../../server/tenant.js");
+  const fixtureDb = await import("../../server/db.js");
+  inTenant(fixture.id, fixture.url, () => {
+    for (const [i, p] of catalogue.entries()) {
+      fixtureDb
+        .stmt("INSERT INTO products(id,data,position) VALUES(?,?,?)")
+        .run(p.id, JSON.stringify(p), i);
+      fixtureDb.indexProductVariants(p);
+    }
   });
 }
 const server = app.listen(3300, "127.0.0.1");
@@ -44,9 +58,68 @@ for (const signal of ["SIGTERM", "SIGINT"])
     }),
   );
 // Separate merchant for GALA integration checks; existing fixture accounts stay unchanged.
-const {inTenant}=await import('../../server/tenant.js');
-const db=await import('../../server/db.js');
-const {galaProducts,galaCollections}=await import('../../src/data/gala.js');
-sql('INSERT INTO platform_users(sub,email,name,created) VALUES(?,?,?,?)').run('gala-browser','gala-browser@example.test','GALA test',Date.now());
-const gala=provision(sql('SELECT * FROM platform_users WHERE sub=?').get('gala-browser'),{name:'GALA browser',slug:'gala-browser',template:'gala',password:'test-private-password-123'});
-inTenant(gala.id,gala.url,()=>{for(const[i,p]of galaProducts.entries()){db.stmt('INSERT INTO products(id,data,position) VALUES(?,?,?)').run(p.id,JSON.stringify(p),i);db.indexProductVariants(p);}db.setSetting('collections',galaCollections);});
+const { inTenant } = await import("../../server/tenant.js");
+const db = await import("../../server/db.js");
+const { galaProducts, galaCollections } =
+  await import("../../src/data/gala.js");
+sql("INSERT INTO platform_users(sub,email,name,created) VALUES(?,?,?,?)").run(
+  "gala-browser",
+  "gala-browser@example.test",
+  "GALA test",
+  Date.now(),
+);
+const gala = provision(
+  sql("SELECT * FROM platform_users WHERE sub=?").get("gala-browser"),
+  {
+    name: "GALA browser",
+    slug: "gala-browser",
+    template: "gala",
+    password: "test-private-password-123",
+  },
+);
+sql("UPDATE platform_stores SET publication_state='published' WHERE id=?").run(
+  gala.id,
+);
+inTenant(gala.id, gala.url, () => {
+  for (const [i, p] of galaProducts.entries()) {
+    db.stmt("INSERT INTO products(id,data,position) VALUES(?,?,?)").run(
+      p.id,
+      JSON.stringify(p),
+      i,
+    );
+    db.indexProductVariants(p);
+  }
+  db.setSetting("collections", galaCollections);
+});
+const { formDemoProducts } = await import("../../src/data/form-demo.js");
+const fixtureOwner = sql(
+  "SELECT * FROM platform_users WHERE sub='alice'",
+).get();
+for (const [template, slug, seed] of [
+  ["form", "form-browser", formDemoProducts],
+  ["gala", "gala-owned", galaProducts],
+]) {
+  const s = provision(fixtureOwner, {
+    name: template.toUpperCase() + " owned",
+    slug,
+    template,
+    password: "test-private-password-123",
+  });
+  sql(
+    "UPDATE platform_stores SET publication_state='published' WHERE id=?",
+  ).run(s.id);
+  inTenant(s.id, s.url, () => {
+    for (const [i, p] of seed.entries()) {
+      db.stmt("INSERT INTO products(id,data,position) VALUES(?,?,?)").run(
+        p.id,
+        JSON.stringify(p),
+        i,
+      );
+      db.indexProductVariants(p);
+    }
+  });
+}
+const { startImportWorker } = await import("../../server/imports/jobs.js");
+const stopImports = startImportWorker();
+process.on("SIGTERM", stopImports);
+process.on("SIGINT", stopImports);

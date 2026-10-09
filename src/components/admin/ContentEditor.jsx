@@ -1,3 +1,4 @@
+import { useStoreApi } from "@/workspace/StoreScope";
 import { useLanguage, localizeView } from "@/i18n/LanguageContext";
 import { localizeSettings, updateStoreContent } from "@/i18n/content";
 import React, { useState, useEffect } from "react";
@@ -14,11 +15,12 @@ import {
   ShieldCheck,
   Banknote,
 } from "lucide-react";
-import { api, jsonRequest } from "@/api/store";
+import { jsonRequest } from "@/api/store";
 import { useStore } from "@/hooks/useStore";
 import { Button } from "@/components/ui/button";
 import { Panel, Field, ImagePicker, Notice, SaveButton, Busy } from "./AdminUI";
 export default function ContentEditor({ section = "content", notify }) {
+  const api = useStoreApi();
   const { t, language } = useLanguage();
   const { setStore } = useStore();
   const [savedValue, setSavedValue] = useState("");
@@ -34,7 +36,7 @@ export default function ContentEditor({ section = "content", notify }) {
         setDeliveryFeeText((data.checkout.shippingInCents / 100).toFixed(2));
       })
       .catch((e) => setError(e.message));
-  }, []);
+  }, [api]);
   const value = rawValue ? localizeSettings(rawValue, language) : null;
   const update = (group, key, v) =>
     setValue((prev) => updateStoreContent(prev, language, group, key, v));
@@ -444,29 +446,11 @@ export default function ContentEditor({ section = "content", notify }) {
           </Panel>
           <Panel title="Checkout settings" icon={Banknote}>
             <div className="grid sm:grid-cols-3 gap-6">
-              {field(
-                "checkout",
-                "currency",
-                "Currency code",
-                "Three letters, for example USD, EUR or GBP. Updates the catalogue currency; does not convert prices.",
-                3,
-                false,
-                {
-                  required: true,
-                  pattern: "[A-Z]{3}",
-                },
-              )}
-              {field(
-                "checkout",
-                "symbol",
-                "Currency symbol",
-                "For example $, € or £.",
-                8,
-                false,
-                {
-                  required: true,
-                },
-              )}
+              <p>
+                Currency changes and price conversion require review in
+                Financial settings / تغييرات العملة وتحويل الأسعار من الإعدادات
+                المالية بعد المراجعة.
+              </p>
               <Field
                 label="Delivery fee"
                 type="number"

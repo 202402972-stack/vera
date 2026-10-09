@@ -1,3 +1,4 @@
+import { publishFixture } from "./helpers/merchant-fixture.js";
 import test, { before, after } from "node:test";
 import assert from "node:assert/strict";
 import { mkdtempSync, rmSync } from "node:fs";
@@ -33,6 +34,8 @@ async function req(
   } catch {
     data = text;
   }
+  if (url === "/api/platform/stores" && method === "POST" && r.status === 201)
+    publishFixture(core, db, tenant, data, { seed: true });
   return { status: r.status, data, headers: r.headers };
 }
 function user(sub, email) {
@@ -407,7 +410,7 @@ test("owner suspension blocks public and dashboard access and records an audit t
       await req("/api/platform/owner/stores/" + b.id, {
         method: "PATCH",
         cookie: bob.cookie,
-        body: { suspended: true },
+        body: { suspended: true, reason: "Fixture suspension" },
       })
     ).status,
     403,
@@ -417,7 +420,7 @@ test("owner suspension blocks public and dashboard access and records an audit t
       await req("/api/platform/owner/stores/" + b.id, {
         method: "PATCH",
         cookie: alice.cookie,
-        body: { suspended: true },
+        body: { suspended: true, reason: "Fixture suspension" },
       })
     ).status,
     200,
@@ -544,7 +547,7 @@ test("Google code flow verifies signature, audience, nonce and verified email be
       );
       assert.equal(
         callback.headers.get("location"),
-        valid ? "/workspace?create=1" : "/login?error=google",
+        valid ? "/workspace/new" : "/login?error=google",
       );
       if (valid) {
         assert.match(callback.headers.get("set-cookie"), /vera_session=/);

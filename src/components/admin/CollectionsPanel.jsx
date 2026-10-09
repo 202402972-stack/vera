@@ -1,9 +1,11 @@
+import { useStoreApi } from "@/workspace/StoreScope";
 import React, { useEffect, useState } from "react";
-import { api, jsonRequest } from "@/api/store";
+import { jsonRequest } from "@/api/store";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { Button } from "@/components/ui/button";
-import {ImagePicker} from './AdminUI';
+import { ImagePicker } from "./AdminUI";
 export default function CollectionsPanel() {
+  const api = useStoreApi();
   const { language } = useLanguage();
   const t = (ar, en) => (language === "ar" ? ar : en);
   const [open, setOpen] = useState(false),
@@ -18,7 +20,7 @@ export default function CollectionsPanel() {
       api("/admin/collections")
         .then(setData)
         .catch((e) => setError(e.message));
-  }, [open]);
+  }, [api, open]);
   const editingId = editing?.id;
   useEffect(() => {
     if (!editingId) return;
@@ -36,7 +38,7 @@ export default function CollectionsPanel() {
       clearTimeout(timer);
       controller.abort();
     };
-  }, [query, editingId]);
+  }, [query, editingId, api]);
   async function save(next) {
     setBusy(true);
     setError("");
@@ -172,7 +174,12 @@ export default function CollectionsPanel() {
                   </label>
                 ))}
               </div>
-              <ImagePicker value={editing.image||''} onChange={image=>setEditing({...editing,image})} onError={setError} label={t('صورة المجموعة','Collection image')}/>
+              <ImagePicker
+                value={editing.image || ""}
+                onChange={(image) => setEditing({ ...editing, image })}
+                onError={setError}
+                label={t("صورة المجموعة", "Collection image")}
+              />
               <label className="flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"

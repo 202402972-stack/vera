@@ -1,15 +1,25 @@
+import { useDialog } from "./context";
+import "@/workspace/workspace.css";
+import { StorePreview, StoreImports } from "@/workspace/StoreTools";
+import FinancialSettings from "@/components/admin/FinancialSettings";
+import DesignPreview from "@/components/admin/DesignPreview";
+import {
+  useStoreApi,
+  useStoreUrl,
+  Link,
+  useAdminNavigation,
+  useStoreScope,
+} from "@/workspace/StoreScope";
 import GalaContent from "./GalaContent";
 import { StructuredField } from "./StructuredField";
-import React, { useEffect, useState, useCallback } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import React, { useEffect, useState, useCallback, useRef } from "react";
+
 import { Helmet } from "react-helmet";
 import {
   ArrowUpRight,
   PanelLeft,
   LogOut,
   Save,
-  Monitor,
-  Smartphone,
   Palette,
   Package,
   ShoppingBag,
@@ -26,10 +36,10 @@ import {
   Layers,
   Type,
 } from "lucide-react";
-import { api, jsonRequest } from "@/api/store";
+import { jsonRequest } from "@/api/store";
 import { useStore } from "@/hooks/useStore";
 import { useLanguage, localizeView } from "@/i18n/LanguageContext";
-import { storeUrl } from "@/lib/store-scope";
+
 import useSettingsEditor from "@/hooks/useSettingsEditor";
 import { UploadContext } from "@/components/admin/UploadContext";
 import GalaOverview from "./GalaOverview";
@@ -68,13 +78,13 @@ const names = {
   currency: ["Display currencies", "عملات العرض"],
 };
 function Design({ notify }) {
+  const api = useStoreApi();
   const { value, setValue, error, setError, busy, dirty, save } =
       useSettingsEditor(notify),
     { language } = useLanguage();
   const copy = (en, ar) => (language === "ar" ? ar : en);
   const [active, setActive] = useState("hero"),
-    [mobile, setMobile] = useState(false),
-    [revision, setRevision] = useState(0),
+    [view, setView] = useState("edit"),
     [options, setOptions] = useState({ products: [], collections: [] });
   useEffect(() => {
     Promise.all([api("/admin/products?limit=100"), api("/collections")])
@@ -82,7 +92,7 @@ function Design({ notify }) {
         setOptions({ products: p.products, collections: c.collections }),
       )
       .catch((e) => setError(e.message));
-  }, [setError]);
+  }, [api, setError]);
   if (!value)
     return (
       <p role={error ? "alert" : "status"}>
@@ -96,7 +106,6 @@ function Design({ notify }) {
       data-dirty={dirty}
       onSubmit={async (e) => {
         await save(e);
-        setRevision((n) => n + 1);
       }}
     >
       <div className="gs-design-bar">
@@ -112,8 +121,8 @@ function Design({ notify }) {
         <button className="gs-primary" disabled={busy || !dirty}>
           <Save size={16} />
           {busy
-            ? copy("Publishing…", "جارٍ النشر…")
-            : copy("Publish changes", "نشر التعديلات")}
+            ? copy("Saving…", "جارٍ الحفظ…")
+            : copy("Save changes", "حفظ التعديلات")}
         </button>
       </div>
       {error && (
@@ -121,7 +130,26 @@ function Design({ notify }) {
           {error}
         </p>
       )}
-      <div className="gs-design-layout">
+      <div className="gs-view-tabs">
+        <button type="button" onClick={() => setView("edit")}>
+          {copy("Edit", "تحرير")}
+        </button>
+        <button type="button" onClick={() => setView("preview")}>
+          {copy("Preview", "معاينة")}
+        </button>
+        <select
+          aria-label={copy("Setting group", "مجموعة الإعدادات")}
+          value={active}
+          onChange={(e) => setActive(e.target.value)}
+        >
+          {Object.keys(names).map((k) => (
+            <option key={k} value={k}>
+              {names[k][language === "ar" ? 1 : 0]}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className={"gs-design-layout view-" + view}>
         <nav className="gs-design-nav">
           {Object.keys(names).map((k) => (
             <button
@@ -155,40 +183,14 @@ function Design({ notify }) {
           )}
         </div>
         <div className="gs-preview">
-          <div>
-            <button
-              type="button"
-              aria-label="Desktop preview"
-              onClick={() => setMobile(false)}
-            >
-              <Monitor size={18} />
-            </button>
-            <button
-              type="button"
-              aria-label="Mobile preview"
-              onClick={() => setMobile(true)}
-            >
-              <Smartphone size={18} />
-            </button>
-            <a href={storeUrl("/")} target="_blank" rel="noreferrer">
-              {copy("Open store", "افتح المتجر")} ↗
-            </a>
-          </div>
-          <iframe
-            key={revision}
-            title={copy(
-              "Published storefront preview",
-              "معاينة المتجر المنشور",
-            )}
-            src={storeUrl("/")}
-            style={{ width: mobile ? 375 : "100%" }}
-          />
+          <DesignPreview value={value} onError={setError} />
         </div>
       </div>
     </form>
   );
 }
-function Inbox({ kind, notify }) {
+export function Inbox({ kind, notify }) {
+  const api = useStoreApi();
   const [data, setData] = useState(null),
     [error, setError] = useState("");
   const { language } = useLanguage(),
@@ -198,7 +200,7 @@ function Inbox({ kind, notify }) {
       api("/admin/" + kind)
         .then(setData)
         .catch((e) => setError(e.message)),
-    [kind],
+    [api, kind],
   );
   useEffect(() => {
     setData(null);
@@ -288,12 +290,17 @@ const tabs = [
   ["payments", "Payments", "المدفوعات", CreditCard],
   ["analytics", "Analytics", "التحليلات", ChartNoAxesCombined],
   ["integrations", "Connections", "التكاملات", Plug],
+  ["preview", "Preview", "معاينة", Palette],
+  ["imports", "Import history", "سجل النقل", Package],
+  ["finance", "Financial settings", "الإعدادات المالية", CreditCard],
 ];
 export default function GalaAdmin() {
+  const api = useStoreApi();
+  const scope = useStoreScope();
   const { store, refresh } = useStore(),
     { language, setLanguage, t } = useLanguage();
   const copy = (en, ar) => (language === "ar" ? ar : en);
-  const [params, setParams] = useSearchParams(),
+  const [params, setParams] = useAdminNavigation(),
     [session, setSession] = useState(null),
     [checking, setChecking] = useState(true),
     [password, setPassword] = useState(""),
@@ -302,18 +309,27 @@ export default function GalaAdmin() {
     [message, setMessage] = useState(""),
     [mobile, setMobile] = useState(false),
     uploads = useState(0);
+  const navRef = useRef(null);
+  useDialog(mobile, navRef, () => setMobile(false));
   const tab = tabs.find((x) => x[0] === params.get("tab")) || tabs[0];
   useEffect(() => {
     api("/admin/session")
       .then(setSession)
       .catch(() => {})
       .finally(() => setChecking(false));
-    const expired = () => setSession(null);
+    const expired = (e) => {
+      if ((e.detail?.storeId || null) === (scope?.storeId || null))
+        setSession(null);
+    };
     window.addEventListener("admin-session-expired", expired);
     return () => window.removeEventListener("admin-session-expired", expired);
-  }, []);
+  }, [api, scope?.storeId]);
   const notify = (m) => setMessage(m);
   const components = {
+    preview: <StorePreview />,
+    imports: scope ? <StoreImports /> : null,
+    finance: <FinancialSettings notify={notify} />,
+    settings: <CommercePanel notify={notify} />,
     overview: <GalaOverview />,
     design: <Design notify={notify} />,
     products: <ProductsEditor notify={notify} />,
@@ -347,6 +363,11 @@ export default function GalaAdmin() {
           <title>GALA Studio · {store.name}</title>
           <meta name="robots" content="noindex,nofollow" />
         </Helmet>
+        {!scope && store._workspaceUrl && (
+          <a className="gs-notice" href={store._workspaceUrl}>
+            {copy("Open your unified workspace", "افتح مساحة متاجرك الموحدة")} ↗
+          </a>
+        )}
         {checking ? (
           <div className="gs-empty" role="status">
             {copy("Opening your studio…", "جارٍ فتح الاستوديو…")}
@@ -401,7 +422,25 @@ export default function GalaAdmin() {
           </div>
         ) : (
           <>
-            <aside className={"gs-sidebar " + (mobile ? "is-open" : "")}>
+            {mobile && (
+              <button
+                className="admin-nav-backdrop"
+                aria-label={copy("Close navigation", "إغلاق القائمة")}
+                onClick={() => setMobile(false)}
+              />
+            )}
+            <aside
+              ref={navRef}
+              role={mobile ? "dialog" : undefined}
+              aria-modal={mobile ? true : undefined}
+              aria-label={copy("Studio sections", "أقسام الاستوديو")}
+              className={"gs-sidebar " + (mobile ? "is-open" : "")}
+            >
+              {mobile && (
+                <button onClick={() => setMobile(false)}>
+                  {copy("Close", "إغلاق")} ×
+                </button>
+              )}
               <Link to="/" className="gs-wordmark">
                 GALA<span>MERCHANT STUDIO</span>
               </Link>
@@ -413,30 +452,34 @@ export default function GalaAdmin() {
                 </div>
               </div>
               <nav>
-                {tabs.map(([key, en, ar, Icon]) => (
-                  <button
-                    key={key}
-                    aria-current={tab[0] === key ? "page" : undefined}
-                    onClick={() => {
-                      if (
-                        document.querySelector('[data-dirty="true"]') &&
-                        !window.confirm(
-                          copy(
-                            "Discard unpublished changes?",
-                            "تجاهل التعديلات غير المنشورة؟",
-                          ),
+                {tabs
+                  .filter(
+                    ([key]) => scope || !["imports", "preview"].includes(key),
+                  )
+                  .map(([key, en, ar, Icon]) => (
+                    <button
+                      key={key}
+                      aria-current={tab[0] === key ? "page" : undefined}
+                      onClick={() => {
+                        if (
+                          document.querySelector('[data-dirty="true"]') &&
+                          !window.confirm(
+                            copy(
+                              "Discard unpublished changes?",
+                              "تجاهل التعديلات غير المنشورة؟",
+                            ),
+                          )
                         )
-                      )
-                        return;
-                      setParams({ tab: key });
-                      setMessage("");
-                      setMobile(false);
-                    }}
-                  >
-                    <Icon size={17} />
-                    {copy(en, ar)}
-                  </button>
-                ))}
+                          return;
+                        setParams({ tab: key });
+                        setMessage("");
+                        setMobile(false);
+                      }}
+                    >
+                      <Icon size={17} />
+                      {copy(en, ar)}
+                    </button>
+                  ))}
               </nav>
               <button
                 className="gs-logout"
@@ -459,6 +502,7 @@ export default function GalaAdmin() {
                   className="gs-menu"
                   onClick={() => setMobile(!mobile)}
                   aria-label={copy("Toggle navigation", "فتح القائمة")}
+                  aria-expanded={mobile}
                 >
                   <PanelLeft size={20} />
                 </button>

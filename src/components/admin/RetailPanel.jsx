@@ -1,9 +1,12 @@
-import { storeUrl } from "@/lib/store-scope";
+import { useStoreApi, useStoreUrl } from "@/workspace/StoreScope";
+
 import React, { useEffect, useState, useCallback } from "react";
 import { useLanguage } from "@/i18n/LanguageContext";
-import { api, jsonRequest } from "@/api/store";
+import { jsonRequest } from "@/api/store";
 import { Panel, Notice, Busy } from "./AdminUI";
 export default function RetailPanel({ kind, notify }) {
+  const storeUrl = useStoreUrl();
+  const api = useStoreApi();
   const { language } = useLanguage(),
     t = (en, ar) => (language === "ar" ? ar : en),
     [data, setData] = useState(null),
@@ -23,7 +26,7 @@ export default function RetailPanel({ kind, notify }) {
       api("/admin/" + kind)
         .then((d) => setData(d[kind]))
         .catch((e) => setError(e.message)),
-    [kind],
+    [api, kind],
   );
   useEffect(() => {
     setData(null);

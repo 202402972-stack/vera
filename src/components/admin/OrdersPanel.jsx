@@ -1,4 +1,5 @@
-import { storeUrl } from "@/lib/store-scope";
+import { useStoreApi, useStoreUrl } from "@/workspace/StoreScope";
+
 import { useSearchParams } from "react-router-dom";
 import useModal from "@/hooks/useModal";
 import ResponsiveTable from "./ResponsiveTable";
@@ -18,10 +19,12 @@ import {
   Clock,
   Truck,
 } from "lucide-react";
-import { api, jsonRequest, formatCurrency } from "@/api/store";
+import { jsonRequest, formatCurrency } from "@/api/store";
 import { Button } from "@/components/ui/button";
 import { Panel, Field, Notice, Busy, SaveButton } from "./AdminUI";
 export default function OrdersPanel({ notify }) {
+  const storeUrl = useStoreUrl();
+  const api = useStoreApi();
   const { t, date, language } = useLanguage();
   const paymentLabel = (order) =>
     order.payment_method === "paymob"
@@ -77,7 +80,7 @@ export default function OrdersPanel({ notify }) {
         if (!controller.signal.aborted) setError(e.message);
       });
     return () => controller.abort();
-  }, [orderId]);
+  }, [api, orderId]);
   const modalRef = useModal(!!selected, () => {
     closeOrder();
   });
@@ -91,7 +94,7 @@ export default function OrdersPanel({ notify }) {
     } catch (e) {
       setError(e.message);
     }
-  }, [page, status, query]);
+  }, [api, page, status, query]);
   useEffect(() => {
     reload();
   }, [reload]);

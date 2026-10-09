@@ -1,4 +1,9 @@
 import { test, expect } from "@playwright/test";
+const openNav = async (page) => {
+  await page.locator(".admin-tabs").waitFor({ state: "attached" });
+  if (!(await page.locator(".admin-tabs").isVisible()))
+    await page.locator(".dashboard-header .admin-mobile-menu").click();
+};
 for (const locale of ["en", "ar"]) {
   test(`populated analytics and dashboard hero fit mobile in ${locale}`, async ({
     page,
@@ -9,11 +14,12 @@ for (const locale of ["en", "ar"]) {
     );
     await page.setViewportSize({ width: 320, height: 740 });
     await page.goto("/");
+    await expect(page.locator(".store-theme")).toBeVisible();
     const originalColors = await page.evaluate(() => ({
-      background: getComputedStyle(document.documentElement)
+      background: getComputedStyle(document.querySelector(".store-theme"))
         .getPropertyValue("--background")
         .trim(),
-      primary: getComputedStyle(document.documentElement)
+      primary: getComputedStyle(document.querySelector(".store-theme"))
         .getPropertyValue("--primary")
         .trim(),
     }));
@@ -62,9 +68,11 @@ for (const locale of ["en", "ar"]) {
         exact: true,
       })
       .click();
+    await openNav(page);
     await expect(page.locator(".admin-tabs")).toBeVisible();
     for (const width of [320, 390, 768]) {
       await page.setViewportSize({ width, height: 740 });
+      await openNav(page);
       await page
         .getByRole("button", {
           name: locale === "ar" ? "التحليلات" : "Analytics",
@@ -137,6 +145,7 @@ for (const locale of ["en", "ar"]) {
           .locator(".admin-journey")
           .evaluate((el) => el.scrollWidth <= el.clientWidth + 1),
       ).toBe(true);
+      await openNav(page);
       await page
         .getByRole("button", {
           name: locale === "ar" ? "محتوى المتجر" : "Store content",

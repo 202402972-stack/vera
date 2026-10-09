@@ -13,6 +13,9 @@ async function login(page) {
   await page
     .getByRole("button", { name: "Enter dashboard", exact: true })
     .click();
+  await page.locator(".admin-tabs").waitFor({ state: "attached" });
+  if (!(await page.locator(".admin-tabs").isVisible()))
+    await page.locator(".dashboard-header .admin-mobile-menu").click();
   await expect(page.locator(".admin-tabs")).toBeVisible();
 }
 for (const language of ["en", "ar"]) {
@@ -59,26 +62,23 @@ for (const language of ["en", "ar"]) {
     await expect(page.locator(".login-password-toggle")).toBeVisible();
   });
 }
-test("mobile dashboard header hides downwards and returns upwards, desktop stays visible", async ({
+test("mobile dashboard header stays usable during scrolling and opens its sections", async ({
   page,
 }) => {
   await page.addInitScript(() => localStorage.setItem("store-language", "en"));
   await page.setViewportSize({ width: 390, height: 700 });
   await login(page);
+  await page.keyboard.press("Escape");
   const header = page.locator(".dashboard-header");
   await page.locator(".dashboard-language").click();
   await page.evaluate(() => window.scrollTo(0, 650));
-  await expect(header).toHaveClass(/is-scroll-hidden/);
-  await expect
-    .poll(() => header.evaluate((el) => el.getBoundingClientRect().bottom))
-    .toBeLessThanOrEqual(0);
-  await page.evaluate(() => window.scrollBy(0, -120));
   await expect(header).not.toHaveClass(/is-scroll-hidden/);
-  await expect
-    .poll(() =>
-      header.evaluate((el) => Math.round(el.getBoundingClientRect().top)),
-    )
-    .toBe(0);
+  await expect(header).toBeInViewport();
+  await page.locator(".dashboard-header .admin-mobile-menu").click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await page.evaluate(() => window.scrollBy(0, -120));
+  await expect(header).toBeInViewport();
   await expect(page.locator(".welcome-emblem > span")).toHaveText("B");
   await page.setViewportSize({ width: 1440, height: 700 });
   await page.evaluate(() => window.scrollTo(0, 800));

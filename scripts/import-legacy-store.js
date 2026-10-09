@@ -48,6 +48,9 @@ const store = provision(
     setPassword(password);
   },
 );
+sql("UPDATE platform_stores SET publication_state='published' WHERE id=?").run(
+  store.id,
+);
 console.log(
   JSON.stringify({
     imported: true,

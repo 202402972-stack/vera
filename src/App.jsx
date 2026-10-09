@@ -1,3 +1,11 @@
+import {
+  AtelierCatalog,
+  AtelierCollections,
+  AtelierAccount,
+  AtelierContact,
+} from "@/templates/atelier/AtelierPages";
+import { SavedProvider } from "@/templates/form/FormShell";
+import "@/templates/form/form.css";
 import { useLanguage, localizeView } from "@/i18n/LanguageContext";
 import React, { lazy, Suspense } from "react";
 import { Route, Routes, Navigate } from "react-router-dom";
@@ -14,7 +22,7 @@ import { Toaster } from "@/components/ui/toaster.jsx";
 function App() {
   const { t } = useLanguage();
   return localizeView(
-    <>
+    <SavedProvider>
       <ScrollToTop />
       <AnalyticsTracker />
       <Suspense
@@ -28,9 +36,13 @@ function App() {
           <Route path="/success" element={<SuccessPage />} />
           <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="/admin" element={<AdminPage />} />
-          <Route path="/shop" element={<HomePage />} />
+          <Route path="/shop" element={<AtelierCatalog />} />
+          <Route path="/saved" element={<AtelierCatalog saved />} />
+          <Route path="/collections" element={<AtelierCollections />} />
+          <Route path="/account" element={<AtelierAccount />} />
+          <Route path="/track" element={<AtelierAccount />} />
           <Route path="/about" element={<InfoPage type="about" />} />
-          <Route path="/contact" element={<InfoPage type="contact" />} />
+          <Route path="/contact" element={<AtelierContact />} />
           <Route path="/privacy" element={<InfoPage type="privacy" />} />
           <Route path="/terms" element={<InfoPage type="terms" />} />
           <Route path="/shipping" element={<InfoPage type="shipping" />} />
@@ -39,7 +51,7 @@ function App() {
         </Routes>
       </Suspense>
       <Toaster />
-    </>,
+    </SavedProvider>,
     t,
   );
 }

@@ -34,11 +34,17 @@ const dictionary = {
     ],
   },
 };
+const openNav = async (page) => {
+  await page.locator(".admin-tabs").waitFor({ state: "attached" });
+  if (!(await page.locator(".admin-tabs").isVisible()))
+    await page.locator(".dashboard-header .admin-mobile-menu").click();
+};
 const login = async (page, locale) => {
   const d = dictionary[locale];
   await page.goto("/admin");
   await page.getByLabel(d.password, { exact: true }).fill("admin@admin");
   await page.getByRole("button", { name: d.enter, exact: true }).click();
+  await openNav(page);
   await expect(page.getByRole("navigation", { name: d.nav })).toBeVisible();
 };
 const switchFromStore = async (page, language) => {
@@ -120,6 +126,7 @@ for (const locale of ["ar", "en"])
     for (const width of [320, 390, 768]) {
       await page.setViewportSize({ width, height: 844 });
       for (const [index, name] of d.tabs.entries()) {
+        await openNav(page);
         await page
           .getByRole("navigation", { name: d.nav })
           .getByRole("button", { name, exact: true })
@@ -160,6 +167,13 @@ for (const locale of ["ar", "en"])
             })
             .click();
           await noOverflow(page);
+          await page
+            .getByRole("button", {
+              name:
+                locale === "ar" ? "الخيارات والمخزون" : "Options & inventory",
+              exact: true,
+            })
+            .click();
           await expect(
             page
               .getByLabel(locale === "ar" ? "اسم الخيار" : "Style name", {
@@ -286,6 +300,7 @@ test("Arabic dashboard creates, edits and deletes products, styles, details, gal
   await page.setViewportSize({ width: 320, height: 844 });
   await login(page, "ar");
   const nav = page.getByRole("navigation", { name: dictionary.ar.nav });
+  await openNav(page);
   await nav.getByRole("button", { name: "المنتجات", exact: true }).click();
   await page.getByRole("button", { name: "إضافة منتج", exact: true }).click();
   await page
@@ -298,10 +313,14 @@ test("Arabic dashboard creates, edits and deletes products, styles, details, gal
     .getByLabel("وصف قصير", { exact: true })
     .fill("نعومة وأناقة في كل تفصيل");
   await page.getByLabel("الظهور", { exact: true }).selectOption("published");
+  await page.getByRole("button", { name: "الصور", exact: true }).click();
   await page
     .locator("input[type=file]")
     .setInputFiles(path.resolve("public/assets/hero.jpg"));
   await expect(page.getByAltText("صورة الغلاف")).toBeVisible();
+  await page
+    .getByRole("button", { name: "الخيارات والمخزون", exact: true })
+    .click();
   await page.getByLabel("السعر", { exact: true }).fill("30");
   await page.getByLabel("المخزون", { exact: true }).fill("4");
   await page
@@ -310,9 +329,13 @@ test("Arabic dashboard creates, edits and deletes products, styles, details, gal
   await page.getByLabel("اسم الخيار", { exact: true }).nth(1).fill("لون ذهبي");
   await page.getByLabel("السعر", { exact: true }).nth(1).fill("35");
   await page.getByLabel("المخزون", { exact: true }).nth(1).fill("2");
+  await page
+    .getByRole("button", { name: "التفاصيل والعرض", exact: true })
+    .click();
   await page.getByRole("button", { name: "إضافة تفصيل", exact: true }).click();
   await page.getByLabel("العنوان", { exact: true }).fill("الخامة");
   await page.getByLabel("التفصيل", { exact: true }).fill("صوف فاخر");
+  await page.getByRole("button", { name: "الصور", exact: true }).click();
   await page
     .locator("input[type=file]")
     .last()
@@ -339,6 +362,7 @@ test("Arabic dashboard creates, edits and deletes products, styles, details, gal
   expect(saved.variants.length).toBe(2);
   expect(saved.images.length).toBe(2);
   expect(saved.translations.ar.additional_info[0].title).toBe("الخامة");
+  await openNav(page);
   await nav
     .getByRole("button", { name: "التذييل والإعدادات", exact: true })
     .click();
@@ -353,6 +377,7 @@ test("Arabic dashboard creates, edits and deletes products, styles, details, gal
     page.getByText("تم حفظ المحتوى وتحديث واجهة المتجر.", { exact: true }),
   ).toBeVisible();
   await noOverflow(page);
+  await openNav(page);
   await nav.getByRole("button", { name: "المنتجات", exact: true }).click();
   await page
     .getByRole("button", { name: "حذف اسم عربي معدّل", exact: true })
@@ -433,6 +458,7 @@ test("mobile Arabic connections, Telegram test, order status, inventory restorat
   });
   expect(placed.status()).toBe(201);
   const order = (await placed.json()).order;
+  await openNav(page);
   await nav
     .getByRole("button", { name: "الربط والإعدادات", exact: true })
     .click();
@@ -454,6 +480,7 @@ test("mobile Arabic connections, Telegram test, order status, inventory restorat
     page.getByText("تم إرسال رسالة الاختبار إلى تيليغرام.", { exact: true }),
   ).toBeVisible();
   await noOverflow(page);
+  await openNav(page);
   await nav.getByRole("button", { name: "الطلبات", exact: true }).click();
   await page.getByLabel("البحث في الطلبات", { exact: true }).fill(order.number);
   await expect(
@@ -486,6 +513,7 @@ test("mobile Arabic connections, Telegram test, order status, inventory restorat
   await page.getByRole("link", { name: "ملف CSV", exact: true }).click();
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toBe("orders.csv");
+  await openNav(page);
   await nav.getByRole("button", { name: "التحليلات", exact: true }).click();
   await page.getByLabel("فترة التحليلات", { exact: true }).selectOption("0");
   await expect(
@@ -495,6 +523,7 @@ test("mobile Arabic connections, Telegram test, order status, inventory restorat
     ),
   ).toBeVisible();
   await noOverflow(page);
+  await openNav(page);
   await nav
     .getByRole("button", { name: "الربط والإعدادات", exact: true })
     .click();

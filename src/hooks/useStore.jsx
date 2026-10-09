@@ -1,23 +1,30 @@
 import { brandTokens } from "@/lib/brand";
-import React, { createContext, useContext, useEffect, useState } from "react";
-import { api } from "@/api/store";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+} from "react";
+import { useStoreApi } from "@/workspace/StoreScope";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { localizeSettings } from "@/i18n/content";
 import { defaultSettings } from "@/data/settings";
 const StoreContext = createContext();
-export function StoreProvider({ children }) {
+export function StoreProvider({ children, mode, preview = false }) {
+  const api = useStoreApi();
   const { language } = useLanguage();
   const [baseStore, setStore] = useState(defaultSettings);
   const store = localizeSettings(baseStore, language);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true),
     [ready, setReady] = useState(false);
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     setLoading(true);
     try {
       setStore(
         await api(
-          window.location.pathname.endsWith("/admin")
+          mode === "admin" || window.location.pathname.endsWith("/admin")
             ? "/admin/bootstrap"
             : "/store",
         ),
@@ -29,15 +36,31 @@ export function StoreProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [api, mode]);
   useEffect(() => {
-    const tokens = brandTokens(baseStore.brand);
-    for (const [key, value] of Object.entries(tokens))
-      document.documentElement.style.setProperty(key, value);
-  }, [baseStore.brand]);
+    if (
+      new URLSearchParams(window.location.search).get("designPreview") !== "1"
+    )
+      return;
+    const receive = (e) => {
+      if (
+        e.origin !== window.location.origin ||
+        e.source !== window.parent ||
+        e.data?.type !== "vera-design-preview" ||
+        e.data.version !== 1 ||
+        !e.data.settings ||
+        typeof e.data.settings.name !== "string" ||
+        !e.data.settings.brand
+      )
+        return;
+      setStore(e.data.settings);
+    };
+    window.addEventListener("message", receive);
+    return () => window.removeEventListener("message", receive);
+  }, []);
   useEffect(() => {
     refresh();
-  }, []);
+  }, [refresh]);
   if (!ready)
     return (
       <main className="min-h-screen flex items-center justify-center px-6">
@@ -67,7 +90,13 @@ export function StoreProvider({ children }) {
     <StoreContext.Provider
       value={{ store, baseStore, setStore, refresh, error }}
     >
-      {children}
+      <div
+        className="store-theme"
+        style={brandTokens(baseStore.brand)}
+        data-preview={preview}
+      >
+        {children}
+      </div>
     </StoreContext.Provider>
   );
 }

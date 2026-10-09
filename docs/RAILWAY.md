@@ -30,3 +30,7 @@ Keep `numReplicas: 1`. This release is a single writer with a persistent local S
 ## Existing standalone store
 
 A pre-existing boutique database is not deleted. Its original unprefixed tables remain preserved. To make that existing merchant data available under a platform customer account, sign in once, back up the volume, and run the import utility described in [ARCHITECTURE.md](ARCHITECTURE.md). A fresh installation creates empty platform accounts and the public read-only Atelier preview.
+
+## Ecosystem workspace and import rollout
+
+See [OPERATIONS-AR.md](ecosystem/OPERATIONS-AR.md) for the new additive schemas, feature flags, worker limits, provider connections, immutable billing plans and launch responsibilities. `node scripts/verify-backup.js BACKUP_DIRECTORY` verifies integrity, encrypted credentials and a disposable restored application boot. Keep this evidence with the release record. No live deployment or payment approval is implied by local checks.

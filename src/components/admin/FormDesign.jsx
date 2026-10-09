@@ -1,10 +1,21 @@
-import React from "react";
+import DesignPreview from "./DesignPreview";
+import { useStoreApi } from "@/workspace/StoreScope";
+import React, { useState, useEffect } from "react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { localizeSettings, updateStoreContent } from "@/i18n/content";
 import useSettingsEditor from "@/hooks/useSettingsEditor";
 import { Panel, Field, ImagePicker, Notice, Busy, SaveButton } from "./AdminUI";
 import "@/templates/form/form.css";
 export default function FormDesign({ notify }) {
+  const api = useStoreApi(),
+    [active, setActive] = useState("campaign"),
+    [products, setProducts] = useState([]),
+    [productQuery, setProductQuery] = useState("");
+  useEffect(() => {
+    api("/admin/products?limit=100")
+      .then((r) => setProducts(r.products))
+      .catch((e) => setProducts([]));
+  }, [api]);
   const { language } = useLanguage(),
     t = (en, ar) => (language === "ar" ? ar : en);
   const { value, setValue, error, setError, busy, dirty, save } =
@@ -16,7 +27,22 @@ export default function FormDesign({ notify }) {
     config = (key, v) =>
       setValue((prev) => ({ ...prev, form: { ...prev.form, [key]: v } }));
   return (
-    <form onSubmit={save} data-dirty={dirty} className="space-y-6">
+    <form
+      onSubmit={save}
+      data-dirty={dirty}
+      className={"space-y-6 form-design-editor view-" + active}
+    >
+      <nav className="product-editor-sections">
+        {[
+          ["campaign", "Campaign", "الحملة"],
+          ["content", "Sections & story", "الأقسام والحكاية"],
+          ["preview", "Preview", "معاينة"],
+        ].map(([k, en, ar]) => (
+          <button key={k} type="button" onClick={() => setActive(k)}>
+            {t(en, ar)}
+          </button>
+        ))}
+      </nav>
       <Panel
         title={t("Store design · FORM", "تصميم المتجر · FORM")}
         subtitle={t(
@@ -124,6 +150,10 @@ export default function FormDesign({ notify }) {
       <Panel title={t("Homepage sections", "أقسام الصفحة الرئيسية")}>
         <div className="grid md:grid-cols-3 gap-5">
           {[
+            [
+              "newsletterEnabled",
+              t("Newsletter subscription", "اشتراك النشرة"),
+            ],
             ["categoriesEnabled", t("Category tiles", "بطاقات التصنيفات")],
             ["arrivalsEnabled", t("Product grid", "شبكة المنتجات")],
             ["campaignEnabled", t("Story campaign", "حملة حكاية المتجر")],
@@ -138,6 +168,84 @@ export default function FormDesign({ notify }) {
             </label>
           ))}
         </div>
+        <label className="gs-field">
+          {t("Section order", "ترتيب الأقسام")}
+          <select
+            value={(
+              value.form.sectionOrder || ["categories", "arrivals", "campaign"]
+            ).join(",")}
+            onChange={(e) => config("sectionOrder", e.target.value.split(","))}
+          >
+            {[
+              "categories,arrivals,campaign",
+              "campaign,categories,arrivals",
+              "arrivals,campaign,categories",
+              "categories,campaign,arrivals",
+            ].map((o) => (
+              <option value={o} key={o}>
+                {o
+                  .split(",")
+                  .map(
+                    (k) =>
+                      ({
+                        categories: t("Categories", "التصنيفات"),
+                        arrivals: t("Products", "المنتجات"),
+                        campaign: t("Story", "الحكاية"),
+                      })[k],
+                  )
+                  .join(" / ")}
+              </option>
+            ))}
+          </select>
+        </label>
+        <fieldset>
+          <legend>
+            {t("Featured pieces · up to 20", "قطع مختارة · حتى ٢٠")}
+          </legend>
+          <label className="gs-field">
+            {t("Search products", "ابحث في المنتجات")}
+            <input
+              type="search"
+              value={productQuery}
+              onChange={(e) => setProductQuery(e.target.value)}
+            />
+          </label>
+          {products
+            .filter((p) =>
+              p.title.toLowerCase().includes(productQuery.toLowerCase()),
+            )
+            .slice(0, 50)
+            .map((p) => (
+              <label key={p.id}>
+                <input
+                  type="checkbox"
+                  checked={(value.form.featuredIds || []).includes(p.id)}
+                  disabled={
+                    !(value.form.featuredIds || []).includes(p.id) &&
+                    (value.form.featuredIds || []).length >= 20
+                  }
+                  onChange={(e) =>
+                    config(
+                      "featuredIds",
+                      e.target.checked
+                        ? [...(value.form.featuredIds || []), p.id]
+                        : (value.form.featuredIds || []).filter(
+                            (id) => id !== p.id,
+                          ),
+                    )
+                  }
+                />
+                <img
+                  src={p.image || p.images?.[0]?.url}
+                  width="40"
+                  height="48"
+                  alt=""
+                  loading="lazy"
+                />
+                {p.title}
+              </label>
+            ))}
+        </fieldset>
         <div className="grid md:grid-cols-2 gap-7 mt-7">
           <div>
             <Field
@@ -163,6 +271,9 @@ export default function FormDesign({ notify }) {
           />
         </div>
       </Panel>
+      <section className="form-design-live-preview">
+        <DesignPreview value={value} onError={setError} />
+      </section>
       <SaveButton busy={busy} disabled={!dirty} dirty={dirty} />
     </form>
   );

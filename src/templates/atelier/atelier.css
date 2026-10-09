@@ -1,0 +1,178 @@
+.atelier-store {
+  background: #f8f5ef;
+  color: #38322c;
+}
+.atelier-catalog,
+.commerce-collections {
+  max-width: 1320px;
+  margin: auto;
+  padding: 64px 32px;
+}
+.atelier-catalog > span {
+  font-size: 11px;
+  letter-spacing: 0.15em;
+}
+.atelier-catalog h1,
+.commerce-collections h1 {
+  font: clamp(36px, 5vw, 64px)/1.1 var(--font-heading);
+  margin: 24px 0 40px;
+}
+.atelier-catalog-tools {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-block: 24px;
+}
+.atelier-catalog-tools input,
+.atelier-catalog-tools select {
+  padding: 14px;
+  background: transparent;
+  border: 1px solid #cfc5b6;
+  min-width: 0;
+}
+.atelier-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+}
+.atelier-grid article {
+  position: relative;
+}
+.atelier-grid img {
+  width: 100%;
+  aspect-ratio: 4/5;
+  object-fit: cover;
+}
+.atelier-grid h2 {
+  font: 23px var(--font-heading);
+  margin: 16px 0 8px;
+}
+.atelier-grid article > button {
+  position: absolute;
+  top: 12px;
+  inset-inline-end: 12px;
+  background: #f8f5efcc;
+  width: 44px;
+  height: 44px;
+  font-size: 24px;
+}
+.atelier-retail {
+  --form-green: #38322c;
+  --form-ink: #38322c;
+  --form-background: #f8f5ef;
+  padding: 32px;
+}
+.atelier-retail h1,
+.atelier-retail h2 {
+  font-family: var(--font-heading);
+}
+.commerce-collection-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+.commerce-collection-grid img {
+  aspect-ratio: 4/3;
+  object-fit: cover;
+  width: 100%;
+}
+.commerce-overlay {
+  position: fixed;
+  inset: 0;
+  background: #0006;
+  z-index: 150;
+  display: flex;
+  justify-content: flex-end;
+}
+.commerce-overlay > section {
+  width: min(100%, 520px);
+  background: #fff;
+  height: 100%;
+  overflow: auto;
+  padding: 24px;
+}
+.commerce-overlay header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  position: sticky;
+  top: -24px;
+  background: #fff;
+  padding-block: 16px;
+  z-index: 1;
+}
+.commerce-overlay header button {
+  width: 44px;
+  height: 44px;
+  font-size: 28px;
+}
+.commerce-overlay img {
+  max-height: 80vh;
+  object-fit: contain;
+}
+.community-form {
+  padding: 32px;
+  max-width: 700px;
+  margin: auto;
+  display: grid;
+  gap: 16px;
+}
+.community-form label {
+  display: grid;
+  gap: 8px;
+}
+.community-form label:has([type="checkbox"]) {
+  display: flex;
+}
+.community-form input,
+.community-form textarea {
+  border: 1px solid #cfc5b6;
+  padding: 12px;
+  min-width: 0;
+  font-size: 16px;
+}
+.community-form button {
+  padding: 14px;
+  background: #38322c;
+  color: white;
+}
+.commerce-recommendations {
+  padding-block: 40px;
+}
+.commerce-recommendations > div {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+.commerce-recommendations img {
+  width: 100%;
+  aspect-ratio: 4/5;
+  object-fit: cover;
+}
+.commerce-recommendations span,
+.commerce-recommendations small {
+  display: block;
+  padding-top: 8px;
+}
+@media (max-width: 767px) {
+  .atelier-catalog,
+  .commerce-collections {
+    padding: 32px 16px;
+  }
+  .atelier-grid,
+  .commerce-collection-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+  .atelier-grid h2 {
+    font-size: 18px;
+  }
+  .atelier-catalog-tools input {
+    width: 100%;
+  }
+  .commerce-recommendations > div {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

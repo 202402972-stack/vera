@@ -152,3 +152,55 @@ test("persistent confirmation queue retries transient errors and clears after ve
   assert.ok(retry.next > Date.now());
   assert.match(retry.error, /mismatch/);
 });
+test("old recurring callbacks keep their approved currency, amount, plan and integrations after a new plan is configured", async () => {
+  const original = { ...process.env };
+  try {
+    Object.assign(process.env, {
+      PAYMOB_CURRENCY: "EGP",
+      PAYMOB_AMOUNT_CENTS: "9000",
+      PAYMOB_PLAN_ID: "88",
+      PAYMOB_INTEGRATION_ID: "50",
+      PAYMOB_MOTO_ID: "51",
+    });
+    txn = {
+      ...txn,
+      id: 25,
+      order: { id: 125 },
+      currency: "USD",
+      amount_cents: 150,
+      integration_id: 13,
+      pending: false,
+      is_refunded: false,
+      success: true,
+    };
+    subscription = { id: 30, plan: 77, state: "active" };
+    await billing.reconcileTransaction(25);
+    assert.equal(
+      core
+        .sql("SELECT currency FROM platform_paymob_payments WHERE id=?")
+        .get("25").currency,
+      "USD",
+    );
+    txn = {
+      ...txn,
+      id: 26,
+      amount_cents: 9000,
+      currency: "EGP",
+      integration_id: 51,
+    };
+    await assert.rejects(
+      billing.reconcileTransaction(26),
+      /amount, currency or integration/,
+    );
+    assert.equal(JSON.parse(state().billing_plan_snapshot).currency, "USD");
+  } finally {
+    for (const key of [
+      "PAYMOB_CURRENCY",
+      "PAYMOB_AMOUNT_CENTS",
+      "PAYMOB_PLAN_ID",
+      "PAYMOB_INTEGRATION_ID",
+      "PAYMOB_MOTO_ID",
+    ])
+      process.env[key] = original[key];
+  }
+});

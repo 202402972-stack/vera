@@ -83,10 +83,14 @@ test("dashboard login, all sections, content save and upload/product management"
   await page
     .getByLabel("Visibility", { exact: true })
     .selectOption("published");
+  await page.getByRole("button", { name: "Images", exact: true }).click();
   await page
     .locator("input[type=file]")
     .setInputFiles(path.resolve("public/assets/hero.jpg"));
   await expect(page.getByAltText("Cover photograph")).toBeVisible();
+  await page
+    .getByRole("button", { name: "Options & inventory", exact: true })
+    .click();
   await page.getByLabel("Price", { exact: true }).fill("25.00");
   await page.getByLabel("Stock", { exact: true }).fill("3");
   await page
@@ -147,6 +151,7 @@ test("dashboard login, all sections, content save and upload/product management"
     page.getByRole("status").filter({ hasText: "Product deleted" }),
   ).toBeVisible();
   await page.setViewportSize({ width: 390, height: 844 });
+  await page.locator(".dashboard-header .admin-mobile-menu").click();
   await page.getByRole("button", { name: "Overview", exact: true }).click();
   await page.screenshot({
     path: "screenshots/dashboard-mobile.png",

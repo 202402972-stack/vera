@@ -74,39 +74,26 @@ for (const language of ["ar", "en"])
       }
       expect(errors).toEqual([]);
     });
-test("customer creates a store, pauses it, and still enters the dashboard through SSO", async ({
+test("customer creates a private store and enters workspace through SSO", async ({
   page,
   context,
 }) => {
   await auth(context);
-  await page.goto("/workspace?create=1");
+  await page.goto("/workspace/new");
   await page
-    .getByLabel("Store name", { exact: true })
+    .getByLabel("Brand name", { exact: true })
     .fill("New Collection House");
   await page
-    .getByLabel("Store address", { exact: false })
+    .getByLabel("Store address", { exact: true })
     .fill("new-collection-house");
+  await page.getByLabel("Selling country", { exact: true }).fill("Egypt");
+  await page.getByRole("button", { name: "Next", exact: true }).click();
+  await page.getByRole("button", { name: "Next", exact: true }).click();
   await page
-    .getByLabel("Store dashboard password", { exact: true })
-    .fill("another-private-password-123");
-  await page
-    .getByRole("button", { name: "Create my store", exact: true })
+    .getByRole("button", { name: "Prepare draft", exact: true })
     .click();
-  await expect(
-    page.getByRole("heading", { name: "New Collection House", exact: true }),
-  ).toBeVisible();
-  const card = page
-    .locator(".v-store-card")
-    .filter({ hasText: "New Collection House" });
-  await card.getByRole("button", { name: "Pause", exact: true }).click();
-  await expect(card.locator(".v-status")).toHaveText("Paused");
-  await card
-    .getByRole("button", { name: "Store dashboard", exact: true })
-    .click();
-  await expect(page).toHaveURL(/\/s\/new-collection-house\/admin$/);
-  await expect(
-    page.getByRole("navigation", { name: "Dashboard sections" }),
-  ).toBeVisible();
+  await expect(page).toHaveURL(/\/workspace\/stores\/\d+\/overview/);
+  await expect(page.locator(".launch-panel")).toContainText("Private draft");
 });
 test("store menu contact opens a scoped contact page, and collections synchronize with the storefront", async ({
   page,
@@ -148,7 +135,7 @@ test("store menu contact opens a scoped contact page, and collections synchroniz
     .click();
   await expect(page).toHaveURL(/\/s\/maison-vera\/contact$/);
   await expect(
-    page.getByRole("heading", { name: "Contact", exact: true, level: 1 }),
+    page.getByRole("heading", { name: /Contact/, level: 1 }),
   ).toBeVisible();
 });
 test("workspace password reset revokes store sessions and mobile dashboard remains usable", async ({
@@ -159,6 +146,7 @@ test("workspace password reset revokes store sessions and mobile dashboard remai
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/workspace");
   const card = page.locator(".v-store-card").filter({ hasText: "Maison Véra" });
+  await card.locator("summary").click();
   await card.getByRole("button", { name: "Password", exact: true }).click();
   await page
     .getByLabel("New dashboard password", { exact: true })
@@ -184,6 +172,8 @@ test("workspace password reset revokes store sessions and mobile dashboard remai
   await page
     .getByRole("button", { name: "Enter dashboard", exact: true })
     .click();
+  await page.locator(".admin-tabs").waitFor({ state: "attached" });
+  await page.locator(".dashboard-header .admin-mobile-menu").click();
   await expect(
     page.getByRole("navigation", { name: "Dashboard sections" }),
   ).toBeVisible();
@@ -200,9 +190,16 @@ test("owner sees real accounts and store counts while ordinary customers are den
   await auth(context);
   await page.goto("/owner");
   await expect(
-    page.getByRole("heading", { name: "The complete picture.", exact: true }),
+    page.getByRole("heading", { name: "Overview", exact: true }),
   ).toBeVisible();
-  await expect(page.locator("table")).toContainText("bob@example.test");
+  await expect(page.locator(".v-stores-grid")).toContainText(
+    "Published and available",
+  );
+  await page.getByRole("link", { name: "Merchants", exact: true }).click();
+  await expect(page.locator(".owner-results")).toContainText(
+    "bob@example.test",
+  );
+  await page.getByRole("link", { name: "Settings", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "Platform settings", exact: true }),
   ).toBeVisible();
@@ -214,10 +211,9 @@ test("owner sees real accounts and store counts while ordinary customers are den
   await auth(context, "bob");
   await page.goto("/owner");
   await expect(
-    page.getByRole("heading", {
-      name: "This space is for the platform owner.",
-      exact: true,
-    }),
+    page
+      .getByRole("alert")
+      .filter({ hasText: "Platform owner access required" }),
   ).toBeVisible();
 });
 test("Arabic login and workspace preserve direction, password eye position, and independent brand assets", async ({
@@ -232,6 +228,11 @@ test("Arabic login and workspace preserve direction, password eye position, and 
   await auth(context);
   await page.goto("/workspace");
   await expect(page.locator(".v-store-card").first()).toBeVisible();
+  await page
+    .locator(".v-store-card")
+    .filter({ hasText: "Maison Véra" })
+    .locator("summary")
+    .click();
   await page
     .locator(".v-store-card")
     .filter({ hasText: "Maison Véra" })

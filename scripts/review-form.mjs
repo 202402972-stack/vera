@@ -48,6 +48,9 @@ if (
     );
   });
 }
+core
+  .sql("UPDATE platform_stores SET publication_state='published' WHERE slug=?")
+  .run("form-review");
 app.listen(3001, "127.0.0.1", () =>
   console.log(
     "Local review: http://127.0.0.1:3001/demo/form — dashboard /s/form-review/admin (local-review-only-123). Isolated review data; never use in production.",

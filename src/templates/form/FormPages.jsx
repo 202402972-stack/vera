@@ -1,3 +1,7 @@
+import ReactOverlay from "@/components/commerce/Overlay";
+import Recommendations from "@/components/commerce/Recommendations";
+import Community from "@/components/commerce/Community";
+import { storeKey } from "@/lib/store-scope";
 import React, { useEffect, useState } from "react";
 import { Link, useSearchParams, useParams } from "react-router-dom";
 import {
@@ -100,10 +104,33 @@ export function Status({ error, empty }) {
     </div>
   );
 }
+function orderSections(
+  fragment,
+  order = ["categories", "arrivals", "campaign"],
+) {
+  const nodes = React.Children.toArray(fragment.props.children).filter(Boolean);
+  const keys = {
+    "form-categories": "categories",
+    "form-section": "arrivals",
+    "form-campaign": "campaign",
+  };
+  const movable = nodes.filter((n) => keys[n.props?.className]);
+  const sorted = [...movable].sort(
+    (a, b) =>
+      order.indexOf(keys[a.props.className]) -
+      order.indexOf(keys[b.props.className]),
+  );
+  let index = 0;
+  return (
+    <>{nodes.map((n) => (keys[n.props?.className] ? sorted[index++] : n))}</>
+  );
+}
 export function Home() {
   const { store } = useStore(),
     t = useCopy(),
-    { data, error } = useCatalog(),
+    { data, error } = useCatalog(
+      store.form?.featuredIds?.length ? { ids: store.form.featuredIds } : {},
+    ),
     [collections, setCollections] = useState([]);
   useEffect(() => {
     api("/collections")
@@ -133,7 +160,7 @@ export function Home() {
         ).image,
         href: `/shop?category=${encodeURIComponent(name)}`,
       }));
-  return (
+  return orderSections(
     <>
       <section
         className="form-hero"
@@ -216,6 +243,7 @@ export function Home() {
           />
         </section>
       )}
+      {store.form?.newsletterEnabled && <Community newsletter />}
       <section className="form-service">
         <span>{t("Make it your own", "اختيارات تشبهك")}</span>
         <Link to="/shipping">
@@ -231,13 +259,17 @@ export function Home() {
           <ArrowUpRight size={17} />
         </Link>
       </section>
-    </>
+    </>,
+    store.form?.sectionOrder,
   );
 }
 export function Catalog({ saved = false }) {
+  const [filtersOpen, setFiltersOpen] = useState(false),
+    [draftFilters, setDraftFilters] = useState(new URLSearchParams());
   const [params, setParams] = useSearchParams(),
     { ids } = useSaved(),
     t = useCopy();
+  const filterParams = filtersOpen ? draftFilters : params;
   const [categories, setCategories] = useState([]),
     [facets, setFacets] = useState({
       colors: [],
@@ -265,15 +297,96 @@ export function Catalog({ saved = false }) {
       .catch(() => {});
   }, []);
   const change = (key, value) => {
-    const n = new URLSearchParams(params);
+    const n = new URLSearchParams(filtersOpen ? draftFilters : params);
     value ? n.set(key, value) : n.delete(key);
-    setParams(n);
+    if (filtersOpen) setDraftFilters(n);
+    else setParams(n);
   };
   const signature = params.toString();
+  useEffect(() => {
+    if (!saved)
+      sessionStorage.setItem(
+        storeKey("catalog-return"),
+        "/shop" + (signature ? "?" + signature : ""),
+      );
+  }, [signature, saved]);
   useEffect(() => {
     setMore([]);
     setLoadError("");
   }, [signature]);
+  const facetControls = (
+    <div className="form-facet-row">
+      {[
+        ["colors", t("Color", "اللون")],
+        ["sizes", t("Size", "المقاس")],
+        ["materials", t("Material", "الخامة")],
+      ]
+        .filter(([key]) => facets[key].length > 0)
+        .map(([key, label]) => (
+          <details key={key}>
+            <summary>
+              {label}
+              {filterParams.get(key)
+                ? ` (${filterParams.get(key).split("|").length})`
+                : ""}
+            </summary>
+            <div>
+              {facets[key].map((value) => (
+                <label key={value}>
+                  <input
+                    type="checkbox"
+                    checked={(filterParams.get(key) || "")
+                      .split("|")
+                      .includes(value)}
+                    onChange={(e) => {
+                      const current = (filterParams.get(key) || "")
+                        .split("|")
+                        .filter(Boolean);
+                      change(
+                        key,
+                        (e.target.checked
+                          ? [...current, value]
+                          : current.filter((x) => x !== value)
+                        ).join("|"),
+                      );
+                    }}
+                  />
+                  {value}
+                </label>
+              ))}
+            </div>
+          </details>
+        ))}
+      <label>
+        {t("Min price", "أقل سعر")}
+        <input
+          type="number"
+          min="0"
+          step="0.01"
+          value={filterParams.get("min_price") || ""}
+          onChange={(e) => change("min_price", e.target.value)}
+        />
+      </label>
+      <label>
+        {t("Max price", "أعلى سعر")}
+        <input
+          type="number"
+          min="0"
+          step="0.01"
+          value={filterParams.get("max_price") || ""}
+          onChange={(e) => change("max_price", e.target.value)}
+        />
+      </label>
+      <label className="form-stock-filter">
+        <input
+          type="checkbox"
+          checked={filterParams.get("in_stock") === "1"}
+          onChange={(e) => change("in_stock", e.target.checked ? "1" : "")}
+        />
+        {t("In stock", "المتوفر فقط")}
+      </label>
+    </div>
+  );
   return (
     <section className="form-section form-catalog">
       <span className="form-eyebrow">
@@ -348,77 +461,46 @@ export function Catalog({ saved = false }) {
         </div>
       )}
       {!saved && (
-        <div className="form-facet-row">
-          {[
-            ["colors", t("Color", "اللون")],
-            ["sizes", t("Size", "المقاس")],
-            ["materials", t("Material", "الخامة")],
-          ]
-            .filter(([key]) => facets[key].length > 0)
-            .map(([key, label]) => (
-              <details key={key}>
-                <summary>
-                  {label}
-                  {params.get(key)
-                    ? ` (${params.get(key).split("|").length})`
-                    : ""}
-                </summary>
-                <div>
-                  {facets[key].map((value) => (
-                    <label key={value}>
-                      <input
-                        type="checkbox"
-                        checked={(params.get(key) || "")
-                          .split("|")
-                          .includes(value)}
-                        onChange={(e) => {
-                          const current = (params.get(key) || "")
-                            .split("|")
-                            .filter(Boolean);
-                          change(
-                            key,
-                            (e.target.checked
-                              ? [...current, value]
-                              : current.filter((x) => x !== value)
-                            ).join("|"),
-                          );
-                        }}
-                      />
-                      {value}
-                    </label>
-                  ))}
-                </div>
-              </details>
-            ))}
-          <label>
-            {t("Min price", "أقل سعر")}
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              value={params.get("min_price") || ""}
-              onChange={(e) => change("min_price", e.target.value)}
-            />
-          </label>
-          <label>
-            {t("Max price", "أعلى سعر")}
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              value={params.get("max_price") || ""}
-              onChange={(e) => change("max_price", e.target.value)}
-            />
-          </label>
-          <label className="form-stock-filter">
-            <input
-              type="checkbox"
-              checked={params.get("in_stock") === "1"}
-              onChange={(e) => change("in_stock", e.target.checked ? "1" : "")}
-            />
-            {t("In stock", "المتوفر فقط")}
-          </label>
-        </div>
+        <>
+          <button
+            className="form-mobile-filters"
+            onClick={() => {
+              setDraftFilters(new URLSearchParams(params));
+              setFiltersOpen(true);
+            }}
+          >
+            {t("Filters", "الفلاتر")} · {data?.total ?? "…"}
+          </button>
+          <div className="form-desktop-filters">{facetControls}</div>
+          <ReactOverlay
+            open={filtersOpen}
+            onClose={() => setFiltersOpen(false)}
+            title={t("Refine your collection", "حدد اختياراتك")}
+          >
+            {facetControls}
+            <button
+              className="form-button"
+              onClick={() => {
+                setParams(draftFilters);
+                setFiltersOpen(false);
+              }}
+            >
+              {t("Apply filters", "تطبيق الفلاتر")}
+            </button>
+            <button onClick={() => setDraftFilters(new URLSearchParams())}>
+              {t("Clear", "مسح")}
+            </button>
+          </ReactOverlay>
+          <div className="form-filter-chips">
+            {[...params]
+              .filter(([k]) => !["sort", "offset"].includes(k))
+              .map(([k, v]) => (
+                <button key={k} onClick={() => change(k, "")}>
+                  {v} ×
+                </button>
+              ))}
+          </div>
+        </>
       )}
       {!saved && params.size > 0 && (
         <button className="form-text-link" onClick={() => setParams({})}>
@@ -463,6 +545,8 @@ export function Catalog({ saved = false }) {
   );
 }
 export function Product() {
+  const [zoom, setZoom] = useState(false),
+    [bag, setBag] = useState(false);
   const { id } = useParams(),
     t = useCopy(),
     { addToCart } = useCart(),
@@ -497,14 +581,26 @@ export function Product() {
       p.purchasable && (!v.manage_inventory || v.inventory_quantity > 0);
   return (
     <section className="form-section">
-      <Link className="form-text-link" to="/shop">
+      <Link
+        className="form-text-link"
+        to={sessionStorage.getItem(storeKey("catalog-return")) || "/shop"}
+      >
         {t("Collection", "المجموعة")}
         <ChevronRight size={14} />
         {p.title}
       </Link>
       <div className="form-detail">
         <div>
-          <div className="form-detail-image">
+          <div
+            className="form-detail-image"
+            role="button"
+            tabIndex={0}
+            aria-label={t("Zoom image", "تكبير الصورة")}
+            onClick={() => setZoom(true)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") setZoom(true);
+            }}
+          >
             <img src={p.images[image]?.url || p.image} alt={p.title} />
           </div>
           <div className="form-thumbnails">
@@ -593,6 +689,7 @@ export function Product() {
                 try {
                   await addToCart(p, v, quantity, v.inventory_quantity);
                   setMessage(t("Added to your bag", "أضيف إلى حقيبتك"));
+                  setBag(true);
                 } catch (e) {
                   setMessage(e.message);
                 }
@@ -642,6 +739,17 @@ export function Product() {
           </details>
         </div>
       </div>
+      <ReactOverlay open={zoom} onClose={() => setZoom(false)} title={p.title}>
+        <img src={p.images[image]?.url || p.image} alt={p.title} />
+      </ReactOverlay>
+      <ReactOverlay
+        open={bag}
+        onClose={() => setBag(false)}
+        title={t("Your bag", "حقيبتك")}
+      >
+        <Cart />
+      </ReactOverlay>
+      <Recommendations product={p} />
       <Reviews productId={id} />
     </section>
   );
@@ -782,6 +890,7 @@ export function Information({ type }) {
       {type === "missing" && (
         <Link to="/shop">{t("Explore the collection", "اكتشف المجموعة")}</Link>
       )}
+      {type === "contact" && <Community />}
       {type === "contact" && (
         <>
           {store.footer.email && (

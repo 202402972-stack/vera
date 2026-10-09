@@ -1,7 +1,8 @@
+import { useStoreApi } from "@/workspace/StoreScope";
 import { Truck, Settings2, Receipt, Tag, Plus, Pencil } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useLanguage, localizeView } from "@/i18n/LanguageContext";
-import { api, jsonRequest, formatCurrency } from "@/api/store";
+import { jsonRequest, formatCurrency } from "@/api/store";
 import useSettingsEditor from "@/hooks/useSettingsEditor";
 import { Panel, Field, Notice, Busy, SaveButton } from "./AdminUI";
 import { Button } from "@/components/ui/button";
@@ -20,18 +21,22 @@ function Amount({ value, onChange, ...props }) {
   );
 }
 function Discounts({ currency, symbol, notify }) {
+  const api = useStoreApi();
   const { t } = useLanguage();
   const [discounts, setDiscounts] = useState([]),
     [editor, setEditor] = useState(null),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
-  const reload = () =>
-    api("/admin/discounts")
-      .then((d) => setDiscounts(d.discounts))
-      .catch((e) => setError(e.message));
+  const reload = useCallback(
+    () =>
+      api("/admin/discounts")
+        .then((d) => setDiscounts(d.discounts))
+        .catch((e) => setError(e.message)),
+    [api],
+  );
   useEffect(() => {
     reload();
-  }, []);
+  }, [reload]);
   const update = (key, v) => setEditor((old) => ({ ...old, [key]: v }));
   async function save(e) {
     e.preventDefault();

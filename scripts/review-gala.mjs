@@ -40,6 +40,9 @@ if (
     db.setSetting("store", settings);
   });
 }
+core
+  .sql("UPDATE platform_stores SET publication_state='published' WHERE slug=?")
+  .run("gala-review");
 app.listen(3002, "127.0.0.1", () =>
   console.log(
     "GALA review http://127.0.0.1:3002/demo/gala — /s/gala-review/admin (local-review-only-123). Isolated sample data.",

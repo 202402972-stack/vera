@@ -1,3 +1,5 @@
+import Recommendations from "@/components/commerce/Recommendations";
+import { useSaved } from "@/templates/form/FormShell";
 import { useLanguage, localizeView } from "@/i18n/LanguageContext";
 import React, { useState, useEffect, useCallback } from "react";
 import { Helmet } from "react-helmet";
@@ -24,6 +26,7 @@ import {
 const placeholderImage =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzc0MTUxIi8+CiAgPHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxOCIgZmlsbD0iIzlDQTNBRiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pgo8L3N2Zz4K";
 function ProductDetailPage() {
+  const { ids, toggle } = useSaved();
   const { t, language } = useLanguage();
   const { id } = useParams();
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -286,6 +289,13 @@ function ProductDetailPage() {
             }}
             className="flex flex-col"
           >
+            <button
+              onClick={() => toggle(product.id)}
+              aria-pressed={ids.includes(product.id)}
+            >
+              {language === "ar" ? "حفظ القطعة" : "Save piece"}{" "}
+              {ids.includes(product.id) ? "♥" : "♡"}
+            </button>
             <h1 className="text-4xl md:text-5xl font-semibold text-foreground mb-3">
               {product.title}
             </h1>

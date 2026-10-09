@@ -1,3 +1,4 @@
+import SearchPanel from "@/components/commerce/SearchPanel";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
@@ -101,6 +102,7 @@ export function SavedProvider({ children }) {
   );
 }
 export function FormHeader() {
+  const [searchOpen, setSearchOpen] = useState(false);
   const { store } = useStore(),
     { cartItems } = useCart(),
     { language, setLanguage } = useLanguage(),
@@ -118,6 +120,7 @@ export function FormHeader() {
       <a className="form-skip" href="#form-main">
         {t("Skip to content", "انتقل للمحتوى")}
       </a>
+      <SearchPanel open={searchOpen} onClose={() => setSearchOpen(false)} />
       <header className="form-header">
         <Link to="/" className="form-wordmark">
           {store.brand.logo ? (
@@ -132,10 +135,11 @@ export function FormHeader() {
         >
           <Link to="/shop">{t("Shop", "تسوق")}</Link>
           <Link to="/shop?sort=newest">{t("New arrivals", "وصل حديثًا")}</Link>
-          <Link to="/shop?view=collections">
-            {t("Collections", "المجموعات")}
-          </Link>
+          <Link to="/collections">{t("Collections", "المجموعات")}</Link>
           <Link to="/about">{t("Our story", "حكايتنا")}</Link>
+          <Link className="form-nav-account" to="/account">
+            {t("Account & tracking", "الحساب والتتبع")}
+          </Link>
         </nav>
         <form
           className="form-search"
@@ -155,6 +159,12 @@ export function FormHeader() {
           </button>
         </form>
         <div className="form-tools">
+          <button
+            aria-label={t("Search collection", "بحث المجموعة")}
+            onClick={() => setSearchOpen(true)}
+          >
+            <Search size={20} />
+          </button>
           <button
             onClick={() => setLanguage(language === "en" ? "ar" : "en")}
             aria-label={t("Switch to Arabic", "Switch to English")}

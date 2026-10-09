@@ -25,8 +25,25 @@ CREATE TABLE IF NOT EXISTS platform_oauth(hash TEXT PRIMARY KEY,nonce TEXT NOT N
 CREATE TABLE IF NOT EXISTS platform_stores(id INTEGER PRIMARY KEY,owner_id INTEGER NOT NULL REFERENCES platform_users(id),slug TEXT UNIQUE NOT NULL,name TEXT NOT NULL,template TEXT NOT NULL,paused INTEGER NOT NULL DEFAULT 0,suspended INTEGER NOT NULL DEFAULT 0,created INTEGER NOT NULL,trial_until INTEGER NOT NULL,access_until INTEGER NOT NULL DEFAULT 0,customer TEXT,subscription TEXT UNIQUE,billing_status TEXT NOT NULL DEFAULT 'trial',checkout TEXT);
 CREATE INDEX IF NOT EXISTS platform_stores_owner ON platform_stores(owner_id);
 CREATE TABLE IF NOT EXISTS platform_audit(id INTEGER PRIMARY KEY,actor INTEGER,action TEXT NOT NULL,store_id INTEGER,at INTEGER NOT NULL,detail TEXT);
+CREATE TABLE IF NOT EXISTS platform_admin_bridges(platform_session TEXT NOT NULL,store_id INTEGER NOT NULL,token_hash TEXT NOT NULL,PRIMARY KEY(platform_session,store_id,token_hash));
 CREATE TABLE IF NOT EXISTS platform_billing_events(id TEXT PRIMARY KEY,at INTEGER NOT NULL);
 `);
+if (
+  !sql("PRAGMA table_info(platform_stores)")
+    .all()
+    .some((c) => c.name === "publication_state")
+)
+  rawDb.exec(
+    "ALTER TABLE platform_stores ADD COLUMN publication_state TEXT NOT NULL DEFAULT 'published'",
+  );
+if (
+  !sql("PRAGMA table_info(platform_stores)")
+    .all()
+    .some((c) => c.name === "billing_plan_snapshot")
+)
+  rawDb.exec(
+    "ALTER TABLE platform_stores ADD COLUMN billing_plan_snapshot TEXT",
+  );
 const tableNames = [
   "gala_messages",
   "gala_media",
@@ -79,12 +96,27 @@ export const publicStore = (s) => ({
   trialUntil: s.trial_until,
   accessUntil: s.access_until,
   billingStatus: s.billing_status,
+  billingPlan: s.billing_plan_snapshot
+    ? (() => {
+        const p = JSON.parse(s.billing_plan_snapshot);
+        return {
+          id: p.id,
+          amount: p.amount_minor,
+          currency: p.currency,
+          provider: p.provider,
+          intervalDays: p.interval_days,
+        };
+      })()
+    : null,
+  publicationState: s.publication_state,
   available:
+    s.publication_state === "published" &&
     !s.paused &&
     !s.suspended &&
     Math.max(s.trial_until, s.access_until) > Date.now(),
   url: `/s/${s.slug}`,
   adminUrl: `/s/${s.slug}/admin`,
+  workspaceUrl: `/workspace/stores/${s.id}/overview`,
 });
 export function setPassword(password) {
   const salt = randomBytes(32);
@@ -127,7 +159,7 @@ export function provision(
     const until = user.created + 14 * 86400000;
     const id = Number(
       sql(
-        "INSERT INTO platform_stores(owner_id,slug,name,template,created,trial_until) VALUES(?,?,?,?,?,?)",
+        "INSERT INTO platform_stores(owner_id,slug,name,template,created,trial_until,publication_state) VALUES(?,?,?,?,?,?,'draft')",
       ).run(user.id, slug, name.trim(), template, Date.now(), until)
         .lastInsertRowid,
     );

@@ -1,8 +1,20 @@
+import { useDialog } from "@/templates/gala/context";
+import "@/workspace/workspace.css";
+import { StorePreview, StoreImports } from "@/workspace/StoreTools";
+import { Inbox } from "@/templates/gala/GalaAdmin";
+import FinancialSettings from "@/components/admin/FinancialSettings";
+import CollectionsPanel from "@/components/admin/CollectionsPanel";
+import {
+  useStoreApi,
+  Link,
+  useAdminNavigation,
+  useStoreScope,
+} from "@/workspace/StoreScope";
 import { UploadContext } from "@/components/admin/UploadContext";
 import { useLanguage, localizeView } from "@/i18n/LanguageContext";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Helmet } from "react-helmet";
-import { Link, useSearchParams } from "react-router-dom";
+
 import { motion } from "framer-motion";
 import {
   LayoutDashboard,
@@ -19,7 +31,7 @@ import {
   Globe,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { api, jsonRequest } from "@/api/store";
+import { jsonRequest } from "@/api/store";
 import { useStore } from "@/hooks/useStore";
 import { Notice, Busy } from "@/components/admin/AdminUI";
 import BrandStudio from "@/components/admin/BrandStudio";
@@ -51,12 +63,27 @@ const tabs = [
   ["reviews", "Reviews", Type],
   ["returns", "Returns & exchanges", Package],
   ["payments", "Payments", SlidersHorizontal],
+  ["preview", "Preview", Palette],
+  ["imports", "Import history", Package],
+  ["finance", "Financial settings", SlidersHorizontal],
+  ["collections", "Collections", Package],
+  ["messages", "Messages", Send],
+  ["newsletter", "Newsletter", Send],
 ];
 export default function AdminPage() {
+  const api = useStoreApi();
+  const scope = useStoreScope();
   const { t, language, setLanguage } = useLanguage();
   const { store } = useStore();
+  const [navOpen, setNavOpen] = useState(false),
+    navRef = useRef(null);
+  useDialog(navOpen, navRef, () => setNavOpen(false));
   const isForm = store._template?.renderer === "form";
-  const availableTabs = tabs.filter(([id]) => id !== "design" || isForm);
+  const availableTabs = tabs.filter(
+    ([id]) =>
+      (id !== "design" || isForm) &&
+      (!["preview", "imports"].includes(id) || scope),
+  );
   const copy = (en, ar) => (language === "ar" ? ar : en);
   const [uploadCount, setUploadCount] = useState(0);
   const [session, setSession] = useState(null),
@@ -65,22 +92,25 @@ export default function AdminPage() {
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [message, setMessage] = useState("");
-  const { headerRef, hidden, reveal } = useScrollHeader(!!session);
-  const [params, setParams] = useSearchParams();
+  const { headerRef, hidden, reveal } = useScrollHeader(false);
+  const [params, setParams] = useAdminNavigation();
   const tab = availableTabs.some(([id]) => id === params.get("tab"))
     ? params.get("tab")
     : "overview";
   useEffect(() => {
-    const expired = () => setSession(null);
+    const expired = (e) => {
+      if ((e.detail?.storeId || null) === (scope?.storeId || null))
+        setSession(null);
+    };
     window.addEventListener("admin-session-expired", expired);
     return () => window.removeEventListener("admin-session-expired", expired);
-  }, []);
+  }, [scope?.storeId]);
   useEffect(() => {
     api("/admin/session")
       .then(setSession)
       .catch(() => {})
       .finally(() => setChecking(false));
-  }, []);
+  }, [api]);
   useEffect(() => {
     if (!message) return;
     const timer = setTimeout(() => setMessage(""), 6000);
@@ -133,11 +163,18 @@ export default function AdminPage() {
     }
   }
   const content = {
+    preview: <StorePreview />,
+    imports: scope ? <StoreImports /> : null,
     design: isForm ? <FormDesign notify={setMessage} /> : null,
     customers: <RetailPanel kind="customers" notify={setMessage} />,
     reviews: <RetailPanel kind="reviews" notify={setMessage} />,
     returns: <RetailPanel kind="returns" notify={setMessage} />,
     payments: <PaymentsPanel notify={setMessage} />,
+    messages: <Inbox kind="messages" notify={setMessage} />,
+    newsletter: <Inbox kind="newsletter" notify={setMessage} />,
+    finance: <FinancialSettings notify={setMessage} />,
+    collections: <CollectionsPanel />,
+    settings: <CommercePanel notify={setMessage} />,
     overview: <OperationsPanel />,
     brand: <BrandStudio notify={setMessage} />,
     commerce: <CommercePanel notify={setMessage} />,
@@ -155,11 +192,18 @@ export default function AdminPage() {
   };
   return localizeView(
     <UploadContext.Provider value={[uploadCount, setUploadCount]}>
-      <div className="admin-scope admin-dashboard min-h-screen">
+      <div
+        className={`admin-scope admin-dashboard min-h-screen ${isForm ? "form-admin" : "atelier-admin"} ${navOpen ? "nav-open" : ""}`}
+      >
         <Helmet>
           <title>Admin - {store.name}</title>
           <meta name="robots" content="noindex,nofollow" />
         </Helmet>
+        {!scope && store._workspaceUrl && (
+          <a className="v-panel" href={store._workspaceUrl}>
+            {copy("Open your unified workspace", "افتح مساحة متاجرك الموحدة")} ↗
+          </a>
+        )}
         {checking ? (
           <Busy />
         ) : !session ? (
@@ -178,6 +222,13 @@ export default function AdminPage() {
               onFocusCapture={reveal}
               className={`dashboard-header ${hidden ? "is-scroll-hidden" : ""}`}
             >
+              <button
+                className="admin-mobile-menu"
+                aria-expanded={navOpen}
+                onClick={() => setNavOpen(!navOpen)}
+              >
+                {copy("Sections", "الأقسام")} ☰
+              </button>
               <div className="admin-header-row flex items-center justify-between gap-4">
                 <div>
                   <Link
@@ -225,7 +276,26 @@ export default function AdminPage() {
                 </div>
               </div>
             </header>
-            <aside className="dashboard-sidebar">
+            {navOpen && (
+              <button
+                className="admin-nav-backdrop"
+                aria-label={copy("Close navigation", "إغلاق القائمة")}
+                onClick={() => setNavOpen(false)}
+              />
+            )}
+            <aside
+              ref={navRef}
+              className="dashboard-sidebar"
+              role={navOpen ? "dialog" : undefined}
+              aria-modal={navOpen ? true : undefined}
+              aria-label={copy("Store sections", "أقسام المتجر")}
+            >
+              <button
+                className="admin-mobile-menu"
+                onClick={() => setNavOpen(false)}
+              >
+                {copy("Close", "إغلاق")} ×
+              </button>
               <Link to="/admin" className="dashboard-signature">
                 <span
                   className="signature-mark"
@@ -240,7 +310,9 @@ export default function AdminPage() {
                   <small>THE MERCHANT STUDIO</small>
                 </span>
               </Link>
-              <p className="sidebar-label">WORKSPACE</p>
+              <p className="sidebar-label">
+                {copy("WORKSPACE", "مساحة المتجر")}
+              </p>
               <nav className="admin-tabs" aria-label="Dashboard sections">
                 {availableTabs.map(([id, label, Icon]) => (
                   <button
@@ -249,6 +321,7 @@ export default function AdminPage() {
                     onClick={() => {
                       if (!canLeave()) return;
                       reveal();
+                      setNavOpen(false);
                       setParams({
                         tab: id,
                       });
@@ -260,6 +333,12 @@ export default function AdminPage() {
                   >
                     <Icon size={16} />
                     {{
+                      preview: copy("Preview", "معاينة"),
+                      imports: copy("Import history", "سجل النقل"),
+                      finance: copy("Financial settings", "الإعدادات المالية"),
+                      collections: copy("Collections", "المجموعات"),
+                      messages: copy("Messages", "الرسائل"),
+                      newsletter: copy("Newsletter", "النشرة البريدية"),
                       design: copy("Store design", "تصميم المتجر"),
                       customers: copy("Customers", "العملاء"),
                       reviews: copy("Reviews", "التقييمات"),
@@ -296,6 +375,12 @@ export default function AdminPage() {
                       availableTabs.find(([id]) => id === tab)?.[1] ||
                         "Overview",
                       {
+                        preview: "معاينة",
+                        imports: "سجل النقل",
+                        finance: "الإعدادات المالية",
+                        collections: "المجموعات",
+                        messages: "الرسائل",
+                        newsletter: "النشرة البريدية",
                         overview: "نظرة عامة",
                         orders: "الطلبات",
                         products: "المنتجات",

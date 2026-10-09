@@ -1,5 +1,6 @@
+import { useStoreApi, Link } from "@/workspace/StoreScope";
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+
 import {
   ArrowUpRight,
   Package,
@@ -7,10 +8,11 @@ import {
   Layers,
   AlertCircle,
 } from "lucide-react";
-import { api, formatCurrency } from "@/api/store";
+import { formatCurrency } from "@/api/store";
 import { useStore } from "@/hooks/useStore";
 import { useLanguage } from "@/i18n/LanguageContext";
 export default function GalaOverview() {
+  const api = useStoreApi();
   const { store } = useStore(),
     { language, date } = useLanguage(),
     t = (en, ar) => (language === "ar" ? ar : en);
@@ -33,7 +35,7 @@ export default function GalaOverview() {
       active = false;
       clearInterval(timer);
     };
-  }, []);
+  }, [api]);
   return (
     <div className="gs-overview">
       <section className="gs-overview-hero">

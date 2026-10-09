@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <meta charset="utf-8" /><meta
+    name="viewport"
+    content="width=device-width,initial-scale=1"
+  /><title>VÉRA — تقرير المراجعة البصرية</title
+  ><style>
+    body {
+      margin: 0;
+      background: #f5f1eb;
+      color: #302c27;
+      font:
+        17px/1.8 system-ui,
+        sans-serif;
+    }
+    main {
+      max-width: 1200px;
+      margin: auto;
+      padding: 30px 20px;
+    }
+    h1,
+    h2 {
+      color: #743f37;
+    }
+    a {
+      color: #743f37;
+    }
+    header {
+      background: white;
+      padding: 25px;
+      border: 1px solid #d6cfc7;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+      gap: 22px;
+    }
+    article {
+      background: white;
+      border: 1px solid #d6cfc7;
+      padding: 18px;
+    }
+    article img {
+      width: 100%;
+      height: 400px;
+      object-fit: contain;
+      object-position: top;
+      background: #eeebe7;
+    }
+    article h2 {
+      font-size: 20px;
+    }
+    small {
+      display: block;
+      color: #675d54;
+    }
+    .note {
+      background: #e9dfd2;
+      padding: 20px;
+      margin: 25px 0;
+    }
+    code {
+      direction: ltr;
+      unicode-bidi: embed;
+    }
+  </style>
+  <main>
+    <header>
+      <small>VÉRA / codex/vera-ecosystem / a4e0279</small>
+      <h1>تقرير المراجعة البصرية والتنفيذ</h1>
+      <p>
+        صور فعلية من المتصفح المحلي بعد التنفيذ؛ اضغط الصورة لفتحها بالحجم
+        الكامل. البيانات الظاهرة fixtures مؤقتة موسومة، وليست عملاء إنتاج أو
+        إحصائيات أعمال.
+      </p>
+      <p>
+        <a href="EXECUTION-AR.md">سجل جميع التذاكر</a> ·
+        <a href="OPERATIONS-AR.md">التشغيل والمتطلبات المتبقية</a> ·
+        <a href="evidence/manifest.json">أبعاد الصور وبصماتها</a>
+      </p>
+    </header>
+    <section class="note">
+      <h2>ما أظهرته المراجعة</h2>
+      <ul>
+        <li>
+          بقي الهيرو وأصوله، مع أقسام إنشاء ونقل مرتبطة بالمسارات الحقيقية.
+        </li>
+        <li>
+          أُصلح امتداد هيدر FORM عند 360 و390px، وشكل قائمة منتجات الهاتف وبقاء
+          القائمة فوق المحرر.
+        </li>
+        <li>
+          أُصلحت أنماط صفحات المالك والإنشاء والنقل عند فتحها مباشرة؛ الأقسام
+          والاختيارات لم تعد تعتمد على زيارة workspace أولًا.
+        </li>
+        <li>
+          القوالب احتفظت باتجاهاتها: FORM العملي، أتيليه الدافئ، وGALA التحريري؛
+          الإدارة تستخدم الخدمات المشتركة مع skins مستقلة.
+        </li>
+        <li>
+          تحقق AR/EN عند 360 و390 و430 و768 و1440px، وتحقيقات إضافية عند 320px
+          في الفحوص القديمة. تشمل وظائف الشراء كضيف، التتبع، المفضلة، الحفظ
+          والاستكمال، Escape/focus/reduced motion.
+        </li>
+      </ul>
+      <p>
+        مقاييس LCP/INP/CLS الميدانية، اعتماد الدفع، نقل مصدر خارجي مصرح به،
+        إعداد Google، الدومين والتنبيهات والنسخ الخارجية ما زالت تحتاج البيئة
+        والحسابات المحددة في دليل التشغيل. هذه الصور لا تثبت جاهزية إنتاج.
+      </p>
+    </section>
+    <section class="grid">
+      <article>
+        <h2>الهيرو الأصلي · العربية · 390</h2>
+        <a href="evidence/hero-ar-390.webp" target="_blank" rel="noreferrer"
+          ><img
+            src="evidence/hero-ar-390.webp"
+            loading="lazy"
+            alt="الهيرو الأصلي · العربية · 390"
+        /></a>
+        <p>الأصول والتركيب محفوظان؛ CTA ظاهر على الهاتف.</p>
+        <small dir="ltr">390 × 844 · platform/hero-ar-390.png</small>
+      </article>
+      <article>
+        <h2>الهيرو الأصلي · الإنجليزية · 1440</h2>
+        <a href="evidence/hero-en-1440.webp" target="_blank" rel="noreferrer"
+          ><img
+            src="evidence/hero-en-1440.webp"
+            loading="lazy"
+            alt="الهيرو الأصلي · الإنجليزية · 1440"
+        /></a>
+        <p>نفس هوية الصفحة وأصولها قبل تطوير الأقسام اللاحقة.</p>
+        <small dir="ltr">1440 × 1000 · platform/hero-en-1440.png</small>
+      </article>
+      <article>
+        <h2>اللاندنج الكاملة · العربية · 1440</h2>
+        <a href="evidence/landing-ar-1440.webp" target="_blank" rel="noreferrer"
+          ><img
+            src="evidence/landing-ar-1440.webp"
+            loading="lazy"
+            alt="اللاندنج الكاملة · العربية · 1440"
+        /></a>
+        <p>
+          رحلتا الإنشاء والنقل، حدود واضحة، معاينات موسومة وأسئلة متطابقة مع
+          وظائف النسخة.
+        </p>
+        <small dir="ltr">1440 × 8601 · platform/landing-ar-1440.png</small>
+      </article>
+      <article>
+        <h2>اللاندنج · الإنجليزية · 390</h2>
+        <a href="evidence/landing-en-390.webp" target="_blank" rel="noreferrer"
+          ><img
+            src="evidence/landing-en-390.webp"
+            loading="lazy"
+            alt="اللاندنج · الإنجليزية · 390"
+        /></a>
+        <p>المقاسات وCTAs واللغة والنصوص فُحصت دون overflow.</p>
+        <small dir="ltr">390 × 10860 · platform/landing-en-390.png</small>
+      </article>
+      <article>
+        <h2>متاجري · العربية · 390</h2>
+        <a href="evidence/stores-ar-390.webp" target="_blank" rel="noreferrer"
+          ><img
+            src="evidence/stores-ar-390.webp"
+            loading="lazy"
+            alt="متاجري · العربية · 390"
+        /></a>
+        <p>
+          بطاقات الهوية، readiness وآخر تعديل، روابط الإدارة والزيارة والبحث.
+        </p>
+        <small dir="ltr">390 × 3026 · ecosystem/stores-ar-390.png</small>
+      </article>
+      <article>
+        <h2>اختيار القالب · العربية · 390</h2>
+        <a
+          href="evidence/onboarding-ar-390.webp"
+          target="_blank"
+          rel="noreferrer"
+          ><img
+            src="evidence/onboarding-ar-390.webp"
+            loading="lazy"
+            alt="اختيار القالب · العربية · 390"
+        /></a>
+        <p>
+          اختيارات registry حقيقية بعد خطوة حفظ المسودة؛ لا كلمة مرور ثانية.
+        </p>
+        <small dir="ltr">390 × 1960 · ecosystem/onboarding-ar-390.png</small>
+      </article>
+      <article>
+        <h2>اختيار القالب · الإنجليزية · 390</h2>
+        <a
+          href="evidence/onboarding-en-390.webp"
+          target="_blank"
+          rel="noreferrer"
+          ><img
+            src="evidence/onboarding-en-390.webp"
+            loading="lazy"
+            alt="اختيار القالب · الإنجليزية · 390"
+        /></a>
+        <p>تظل نية القالب محفوظة عند الاستكمال.</p>
+        <small dir="ltr">390 × 1842 · ecosystem/onboarding-en-390.png</small>
+      </article>
+      <article>
+        <h2>قائمة المنتجات · العربية · 390</h2>
+        <a
+          href="evidence/product-list-ar-390.webp"
+          target="_blank"
+          rel="noreferrer"
+          ><img
+            src="evidence/product-list-ar-390.webp"
+            loading="lazy"
+            alt="قائمة المنتجات · العربية · 390"
+        /></a>
+        <p>صفوف مختصرة بصور وحالة وسعر ومخزون وإجراءات.</p>
+        <small dir="ltr">390 × 2004 · ecosystem/product-list-ar-390.png</small>
+      </article>
+      <article>
+        <h2>محرر المنتج · العربية · 390</h2>
+        <a
+          href="evidence/product-editor-ar-390.webp"
+          target="_blank"
+          rel="noreferrer"
+          ><img
+            src="evidence/product-editor-ar-390.webp"
+            loading="lazy"
+            alt="محرر المنتج · العربية · 390"
+        /></a>
+        <p>المحرر يظهر وحده، أقسام واضحة وحفظ ظاهر؛ الإغلاق متاح من كل قسم.</p>
+        <small dir="ltr"
+          >390 × 2325 · ecosystem/product-editor-ar-390.png</small
+        >
+      </article>
+      <article>
+        <h2>محرر المنتج · الإنجليزية · 390</h2>
+        <a
+          href="evidence/product-editor-en-390.webp"
+          target="_blank"
+          rel="noreferrer"
+          ><img
+            src="evidence/product-editor-en-390.webp"
+            loading="lazy"
+            alt="محرر المنتج · الإنجليزية · 390"
+        /></a>
+        <p>حفظ واستكمال URL عميق بعد إعادة تحميل الصفحة.</p>
+        <small dir="ltr"
+          >390 × 2330 · ecosystem/product-editor-en-390.png</small
+        >
+      </article>
+      <article>
+        <h2>مراجعة CSV · العربية · 390</h2>
+        <a
+          href="evidence/import-review-ar-390.webp"
+          target="_blank"
+          rel="noreferrer"
+          ><img
+            src="evidence/import-review-ar-390.webp"
+            loading="lazy"
+            alt="مراجعة CSV · العربية · 390"
+        /></a>
+        <p>
+          تم تصحيح سعر ومخزون ناقصين وحفظ المراجعة واستكمال التقرير. ظهور خطأ
+          معاينة صورة يعكس عدم الوصول إلى مصدرها، ولا يُخفى.
+        </p>
+        <small dir="ltr">390 × 2785 · ecosystem/import-review-ar-390.png</small>
+      </article>
+      <article>
+        <h2>مالك المنصة · العربية · 390</h2>
+        <a
+          href="evidence/owner-stores-ar-390.webp"
+          target="_blank"
+          rel="noreferrer"
+          ><img
+            src="evidence/owner-stores-ar-390.webp"
+            loading="lazy"
+            alt="مالك المنصة · العربية · 390"
+        /></a>
+        <p>فلاتر مستقلة، جاهزية مفصلة وتاريخ حالة؛ الوصول مخول للمالك فقط.</p>
+        <small dir="ltr">390 × 2141 · ecosystem/owner-stores-ar-390.png</small>
+      </article>
+      <article>
+        <h2>GALA Studio · العربية · 390</h2>
+        <a
+          href="evidence/gala-design-ar-390.webp"
+          target="_blank"
+          rel="noreferrer"
+          ><img
+            src="evidence/gala-design-ar-390.webp"
+            loading="lazy"
+            alt="GALA Studio · العربية · 390"
+        /></a>
+        <p>
+          وضع المعاينة، canvas 390 scaled وواجهة عربية؛ لا صفحة إعدادات ممتدة
+          فوق المعاينة.
+        </p>
+        <small dir="ltr">390 × 1558 · ecosystem/gala-design-ar-390.png</small>
+      </article>
+      <article>
+        <h2>GALA Studio · الإنجليزية · 1440</h2>
+        <a
+          href="evidence/gala-design-en-1440.webp"
+          target="_blank"
+          rel="noreferrer"
+          ><img
+            src="evidence/gala-design-en-1440.webp"
+            loading="lazy"
+            alt="GALA Studio · الإنجليزية · 1440"
+        /></a>
+        <p>المحرر والمعاينة في مساحة واحدة بهوية الاستوديو.</p>
+        <small dir="ltr">1440 × 1554 · ecosystem/gala-design-en-1440.png</small>
+      </article>
+      <article>
+        <h2>GALA · معاينة تعديلات غير محفوظة</h2>
+        <a
+          href="evidence/gala-unsaved-preview.webp"
+          target="_blank"
+          rel="noreferrer"
+          ><img
+            src="evidence/gala-unsaved-preview.webp"
+            loading="lazy"
+            alt="GALA · معاينة تعديلات غير محفوظة"
+        /></a>
+        <p>
+          اختبار API وpostMessage يثبت عرض التعديل مع بقاء الإعدادات المحفوظة
+          كما كانت.
+        </p>
+        <small dir="ltr"
+          >1440 × 1554 · ecosystem/gala-unsaved-preview.png</small
+        >
+      </article>
+      <article>
+        <h2>FORM · العربية · 360</h2>
+        <a href="evidence/form-ar-360.webp" target="_blank" rel="noreferrer"
+          ><img
+            src="evidence/form-ar-360.webp"
+            loading="lazy"
+            alt="FORM · العربية · 360"
+        /></a>
+        <p>إصلاح overflow الهيدر؛ كتالوج وخيارات وسعر من API.</p>
+        <small dir="ltr">360 × 1627 · ecosystem/form-browser-ar-360.png</small>
+      </article>
+      <article>
+        <h2>FORM · الإنجليزية · 1440</h2>
+        <a href="evidence/form-en-1440.webp" target="_blank" rel="noreferrer"
+          ><img
+            src="evidence/form-en-1440.webp"
+            loading="lazy"
+            alt="FORM · الإنجليزية · 1440"
+        /></a>
+        <p>شبكة عملية حديثة وصور القالب؛ الهوية مستقلة عن أتيليه.</p>
+        <small dir="ltr"
+          >1440 × 1328 · ecosystem/form-browser-en-1440.png</small
+        >
+      </article>
+      <article>
+        <h2>أتيليه · العربية · 390</h2>
+        <a href="evidence/atelier-ar-390.webp" target="_blank" rel="noreferrer"
+          ><img
+            src="evidence/atelier-ar-390.webp"
+            loading="lazy"
+            alt="أتيليه · العربية · 390"
+        /></a>
+        <p>كتالوج بوتيك فعلي ومفضلة؛ الأصول الأربع الأصلية محفوظة.</p>
+        <small dir="ltr">390 × 2057 · ecosystem/maison-vera-ar-390.png</small>
+      </article>
+      <article>
+        <h2>أتيليه · الإنجليزية · 1440</h2>
+        <a href="evidence/atelier-en-1440.webp" target="_blank" rel="noreferrer"
+          ><img
+            src="evidence/atelier-en-1440.webp"
+            loading="lazy"
+            alt="أتيليه · الإنجليزية · 1440"
+        /></a>
+        <p>هوية حرفية دافئة وبيانات كتالوج حقيقية داخل نطاق المتجر.</p>
+        <small dir="ltr">1440 × 2225 · ecosystem/maison-vera-en-1440.png</small>
+      </article>
+      <article>
+        <h2>FORM · تأكيد شراء كضيف</h2>
+        <a
+          href="evidence/form-guest-order.webp"
+          target="_blank"
+          rel="noreferrer"
+          ><img
+            src="evidence/form-guest-order.webp"
+            loading="lazy"
+            alt="FORM · تأكيد شراء كضيف"
+        /></a>
+        <p>
+          طلب COD حقيقي في قاعدة fixture مؤقتة، مع receipt وتتبّع؛ لا عملية دفع
+          حي.
+        </p>
+        <small dir="ltr">390 × 1746 · ecosystem/form-guest-order-390.png</small>
+      </article>
+      <article>
+        <h2>أتيليه · تأكيد شراء كضيف</h2>
+        <a
+          href="evidence/atelier-guest-order.webp"
+          target="_blank"
+          rel="noreferrer"
+          ><img
+            src="evidence/atelier-guest-order.webp"
+            loading="lazy"
+            alt="أتيليه · تأكيد شراء كضيف"
+        /></a>
+        <p>المفضلة والمنتج والسلة والطلب تعمل كرحلة متصلة.</p>
+        <small dir="ltr"
+          >390 × 1666 · ecosystem/atelier-guest-order-390.png</small
+        >
+      </article>
+    </section>
+  </main>
+</html>

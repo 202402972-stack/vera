@@ -1,3 +1,4 @@
+import { useStoreApi } from "@/workspace/StoreScope";
 import { useUploads } from "./UploadContext";
 import useModal from "@/hooks/useModal";
 import { useLanguage, localizeView } from "@/i18n/LanguageContext";
@@ -11,7 +12,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { api } from "@/api/store";
+
 export function Field({
   label,
   hint,
@@ -111,6 +112,7 @@ export function SaveButton({ busy, children = "Save changes", ...props }) {
   return localizeView(
     <Button
       type="submit"
+      className="admin-save-button"
       {...props}
       disabled={busy || uploadCount > 0 || props.disabled}
     >
@@ -131,6 +133,7 @@ export function ImagePicker({
   label = "Image",
   onError,
 }) {
+  const api = useStoreApi();
   const { t } = useLanguage();
   const [busy, setBusy] = useState(false);
   const [uploadCount, setUploadCount] = useUploads();

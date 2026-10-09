@@ -42,7 +42,12 @@ export default function StoreMenu() {
       return;
     event.preventDefault();
     close(true);
-    if (section === "contact") { route("/contact"); return; }
+    if (
+      ["contact", "shop", "saved", "account", "collections"].includes(section)
+    ) {
+      route("/" + section);
+      return;
+    }
     if (!section && location.pathname !== "/") {
       route("/");
       return;
@@ -131,6 +136,13 @@ export default function StoreMenu() {
             </button>
             <div className="store-menu-divider" />
             {[
+              ["shop", language === "ar" ? "الكتالوج" : "Shop", Layers],
+              ["saved", language === "ar" ? "المفضلة" : "Saved", Layers],
+              [
+                "account",
+                language === "ar" ? "الحساب والتتبع" : "Account & tracking",
+                Home,
+              ],
               [
                 "collection",
                 language === "ar" ? "المجموعة" : "Collection",
@@ -141,7 +153,17 @@ export default function StoreMenu() {
             ].map(([section, text, Icon]) => (
               <a
                 key={section}
-                href={storeUrl(section === "contact" ? "/contact" : `/#${section}`)}
+                href={storeUrl(
+                  [
+                    "contact",
+                    "shop",
+                    "saved",
+                    "account",
+                    "collections",
+                  ].includes(section)
+                    ? "/" + section
+                    : `/#${section}`,
+                )}
                 className="store-menu-item"
                 onClick={(event) => navigate(event, section)}
               >

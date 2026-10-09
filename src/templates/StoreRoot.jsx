@@ -5,6 +5,7 @@ import { StoreProvider } from "@/hooks/useStore";
 import { CartProvider } from "@/hooks/useCart";
 import { storeBase } from "@/lib/store-scope";
 import TemplateRenderer from "./registry";
+import StoreSEO from "@/components/StoreSEO";
 export default function StoreRoot() {
   const { language } = useLanguage();
   return (
@@ -27,6 +28,7 @@ export default function StoreRoot() {
           </aside>
         )}
         <BrowserRouter basename={storeBase || "/"}>
+          <StoreSEO />
           <TemplateRenderer />
         </BrowserRouter>
       </CartProvider>

@@ -13,6 +13,15 @@ if (process.env.NODE_ENV === "production") {
       "Set OWNER_EMAILS to the verified Google email addresses of the platform owners.",
     );
 }
+const { startImportWorker } = await import("./imports/jobs.js");
+const stopImports = startImportWorker();
+const { cleanupImports } = await import("./imports/maintenance.js");
+const maintenance = setInterval(
+  () =>
+    cleanupImports().catch(() => console.error("Import maintenance failed")),
+  3600000,
+);
+maintenance.unref();
 const { app } = await import("./platform/app.js");
 const { sql } = await import("./platform/core.js");
 const { inTenant } = await import("./tenant.js");
@@ -47,6 +56,8 @@ timer.unref();
 for (const signal of ["SIGTERM", "SIGINT"])
   process.once(signal, async () => {
     clearInterval(timer);
+    stopImports();
+    clearInterval(maintenance);
     server.close();
     await stopDelivery();
     server.closeAllConnections();

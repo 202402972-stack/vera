@@ -1,8 +1,10 @@
+import { useStoreApi } from "@/workspace/StoreScope";
 import { useEffect, useState } from "react";
-import { api, jsonRequest } from "@/api/store";
+import { jsonRequest } from "@/api/store";
 import { useStore } from "@/hooks/useStore";
 
 export default function useSettingsEditor(notify) {
+  const api = useStoreApi();
   const { setStore } = useStore();
   const [value, setValue] = useState(null),
     [baseline, setBaseline] = useState("");
@@ -32,7 +34,7 @@ export default function useSettingsEditor(notify) {
     return () => {
       current = false;
     };
-  }, []);
+  }, [api]);
   useEffect(() => {
     if (!dirty) return;
     const warn = (e) => {
@@ -50,7 +52,7 @@ export default function useSettingsEditor(notify) {
       const data = await api("/admin/store", jsonRequest("PUT", value));
       accept(data);
       setStore(data);
-      notify("Changes published to your store.");
+      notify("Changes saved to your store.");
     } catch (e) {
       setError(e.message);
     } finally {

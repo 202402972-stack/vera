@@ -1,3 +1,4 @@
+import { providerPlan } from "./pricing.js";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { rawDb, encrypt, decrypt } from "../db.js";
 import { sql, token, audit } from "./core.js";
@@ -19,7 +20,7 @@ export const paymobReady =
   ].every((k) => !!process.env[k]) &&
   Number.isSafeInteger(Number(process.env.PAYMOB_AMOUNT_CENTS)) &&
   Number(process.env.PAYMOB_AMOUNT_CENTS) > 0 &&
-  /^[A-Z]{3}$/.test(process.env.PAYMOB_CURRENCY) &&
+  ["USD", "EGP"].includes(process.env.PAYMOB_CURRENCY) &&
   ["PAYMOB_INTEGRATION_ID", "PAYMOB_MOTO_ID", "PAYMOB_PLAN_ID"].every((k) =>
     /^\d+$/.test(process.env[k]),
   );
@@ -35,6 +36,19 @@ rawDb.exec(`CREATE TABLE IF NOT EXISTS platform_payment_queue(id TEXT PRIMARY KE
 CREATE TABLE IF NOT EXISTS platform_paymob_checkouts(reference TEXT PRIMARY KEY,store_id INTEGER NOT NULL,order_id TEXT UNIQUE,url TEXT,expires INTEGER NOT NULL,created INTEGER NOT NULL,state TEXT NOT NULL DEFAULT 'creating');
 CREATE TABLE IF NOT EXISTS platform_paymob_payments(id TEXT PRIMARY KEY,store_id INTEGER NOT NULL,amount INTEGER NOT NULL,currency TEXT NOT NULL,created INTEGER NOT NULL,until INTEGER NOT NULL,status TEXT NOT NULL,subscription TEXT NOT NULL);
 CREATE INDEX IF NOT EXISTS platform_paymob_store ON platform_paymob_payments(store_id);`);
+if (
+  !sql("PRAGMA table_info(platform_paymob_checkouts)")
+    .all()
+    .some((c) => c.name === "plan_snapshot")
+)
+  rawDb.exec(
+    "ALTER TABLE platform_paymob_checkouts ADD COLUMN plan_snapshot TEXT",
+  );
+const initialPlan = providerPlan();
+if (initialPlan)
+  sql(
+    "UPDATE platform_stores SET billing_plan_snapshot=? WHERE subscription LIKE 'paymob:%' AND billing_plan_snapshot IS NULL",
+  ).run(JSON.stringify(initialPlan));
 const base = "https://accept.paymob.com";
 async function api(path, { method = "GET", body, auth } = {}) {
   const r = await fetch(base + path, {
@@ -173,16 +187,22 @@ async function reconcileCanonical(transactionId) {
       ? sub.plan.id
       : (sub.plan ?? sub.plan_id ?? sub.subscription_plan_id),
   );
-  if (planId !== process.env.PAYMOB_PLAN_ID)
+  const snapshot =
+    JSON.parse(
+      checkout?.plan_snapshot || store.billing_plan_snapshot || "null",
+    ) || providerPlan();
+  if (!snapshot || planId !== snapshot.provider_reference)
     throw new Error("Subscription plan mismatch");
-  const validIntegrations = [
-    Number(process.env.PAYMOB_INTEGRATION_ID),
-    Number(process.env.PAYMOB_MOTO_ID),
-  ];
+  const validIntegrations = snapshot.integration_ids
+    ? JSON.parse(snapshot.integration_ids)
+    : [
+        Number(process.env.PAYMOB_INTEGRATION_ID),
+        Number(process.env.PAYMOB_MOTO_ID),
+      ];
   if (
     !validIntegrations.includes(txn.integration_id) ||
-    txn.amount_cents !== Number(process.env.PAYMOB_AMOUNT_CENTS) ||
-    txn.currency !== process.env.PAYMOB_CURRENCY
+    txn.amount_cents !== snapshot.amount_minor ||
+    txn.currency !== snapshot.currency
   )
     throw new Error("Payment amount, currency or integration mismatch");
   const paid =
@@ -216,6 +236,11 @@ async function reconcileCanonical(transactionId) {
       status,
       subId,
     );
+    if (current)
+      sql("UPDATE platform_stores SET billing_plan_snapshot=? WHERE id=?").run(
+        JSON.stringify(snapshot),
+        store.id,
+      );
     const until = sql(
       "SELECT coalesce(max(until),0) n FROM platform_paymob_payments WHERE store_id=? AND status='paid'",
     ).get(store.id).n;
@@ -332,11 +357,28 @@ export function registerPaymob(app, owned, rate) {
               "Your payment session is being prepared. Please try again shortly.",
           });
         }
+        const approvedPlan = providerPlan();
+        if (req.body.planId && req.body.planId !== approvedPlan.id)
+          return res
+            .status(409)
+            .json({
+              error:
+                "The billing plan changed. Review the actual charge again.",
+            });
         const reference = "vera-" + req.store.id + "-" + token();
         sql(
-          "INSERT INTO platform_paymob_checkouts(reference,store_id,expires,created) VALUES(?,?,?,?)",
-        ).run(reference, req.store.id, Date.now() + 3600000, Date.now());
-        const plan = paymobPlan();
+          "INSERT INTO platform_paymob_checkouts(reference,store_id,expires,created,plan_snapshot) VALUES(?,?,?,?,?)",
+        ).run(
+          reference,
+          req.store.id,
+          Date.now() + 3600000,
+          Date.now(),
+          JSON.stringify(approvedPlan),
+        );
+        const plan = {
+          amount: approvedPlan.amount_minor,
+          currency: approvedPlan.currency,
+        };
         const result = await api("/v1/intention/", {
           method: "POST",
           auth: "Token " + process.env.PAYMOB_SECRET_KEY,
@@ -344,7 +386,7 @@ export function registerPaymob(app, owned, rate) {
             amount: plan.amount,
             currency: plan.currency,
             payment_methods: [Number(process.env.PAYMOB_INTEGRATION_ID)],
-            subscription_plan_id: Number(process.env.PAYMOB_PLAN_ID),
+            subscription_plan_id: Number(approvedPlan.provider_reference),
             items: [
               {
                 name: "VERA First Edition",

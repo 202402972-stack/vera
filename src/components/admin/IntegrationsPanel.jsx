@@ -1,12 +1,15 @@
+import { useStoreApi, useStoreUrl } from "@/workspace/StoreScope";
 import PasswordPanel from "./PasswordPanel";
-import { storeUrl } from "@/lib/store-scope";
+
 import { useLanguage, localizeView } from "@/i18n/LanguageContext";
 import React, { useEffect, useState } from "react";
 import { Send, Download, Database, ShieldCheck, Unplug } from "lucide-react";
-import { api, jsonRequest } from "@/api/store";
+import { jsonRequest } from "@/api/store";
 import { Button } from "@/components/ui/button";
 import { Panel, Field, Notice, Busy, SaveButton } from "./AdminUI";
 export default function IntegrationsPanel({ notify, defaultPassword }) {
+  const storeUrl = useStoreUrl();
+  const api = useStoreApi();
   const { t } = useLanguage();
   const [config, setConfig] = useState(null),
     [token, setToken] = useState(""),
@@ -20,7 +23,7 @@ export default function IntegrationsPanel({ notify, defaultPassword }) {
         setChatId(c.chatId);
       })
       .catch((e) => setError(e.message));
-  }, []);
+  }, [api]);
   async function save(e) {
     e.preventDefault();
     setBusy(true);
@@ -84,7 +87,7 @@ export default function IntegrationsPanel({ notify, defaultPassword }) {
     return localizeView(error ? <Notice error>{error}</Notice> : <Busy />, t);
   return localizeView(
     <div className="space-y-6">
-      <PasswordPanel/>
+      <PasswordPanel />
       {error && <Notice error>{error}</Notice>}
       {config.credentialsError && (
         <Notice error>{config.credentialsError}</Notice>
@@ -226,7 +229,9 @@ export default function IntegrationsPanel({ notify, defaultPassword }) {
               your store to the public.
             </Notice>
           ) : (
-            <Notice>Change your dashboard password using the form above.</Notice>
+            <Notice>
+              Change your dashboard password using the form above.
+            </Notice>
           )}
           <p className="text-xs text-muted-foreground">
             Sign-in uses a server-side session in an HttpOnly cookie, expires

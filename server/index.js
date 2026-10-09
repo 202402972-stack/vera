@@ -1,5 +1,5 @@
-import {migrateAtelierImages} from './atelier-images.js';
-import { registerGala, validateGala } from './gala.js';
+import { migrateAtelierImages } from "./atelier-images.js";
+import { registerGala, validateGala } from "./gala.js";
 import { registerCollections } from "./collections.js";
 import { registerRetail, currentShopper } from "./retail.js";
 import {
@@ -8,6 +8,7 @@ import {
   beginShopperPayment,
 } from "./shopper-payments.js";
 import { tenantId, tenantPath, adminCookie } from "./tenant.js";
+import { registerStoreSEO } from "./seo.js";
 import { resolveBrand, defaultCommerce } from "../src/data/brand.js";
 import { priceCart, quoteTotals, validateDiscount } from "./commerce.js";
 import { exportData } from "./exports.js";
@@ -45,6 +46,7 @@ import {
   indexProductVariants,
 } from "./db.js";
 import {
+  money,
   HttpError,
   text,
   validateProduct,
@@ -67,6 +69,7 @@ import {
 } from "./analytics.js";
 
 export const app = express();
+registerStoreSEO(app);
 app.set("trust proxy", 1);
 app.disable("x-powered-by");
 app.use("/api/admin", (_req, res, next) => {
@@ -199,7 +202,12 @@ app.get("/api/health", (_req, res) => {
   res.json({ ok: true });
 });
 app.get("/api/store", (_req, res) => res.json(publicSettings()));
-app.get("/api/admin/bootstrap", (_req, res) => res.json(publicSettings()));
+app.get("/api/admin/bootstrap", (req, res) =>
+  res.json({
+    ...publicSettings(),
+    ...(req.workspaceUrl ? { _workspaceUrl: req.workspaceUrl } : {}),
+  }),
+);
 app.get("/api/products", (req, res, next) => {
   try {
     if (req.query.ids !== undefined) {
@@ -283,8 +291,19 @@ app.get("/api/products", (req, res, next) => {
       variantRules.push(
         "(json_extract(v.value,'$.manage_inventory')=0 OR json_extract(v.value,'$.inventory_quantity')>0)",
       );
-    if(req.query.in_stock === "0") conditions.push("NOT EXISTS(SELECT 1 FROM json_each(products.data,'$.variants') v WHERE json_extract(v.value,'$.manage_inventory')=0 OR json_extract(v.value,'$.inventory_quantity')>0)");
-    if(req.query.rating){const rating=Number(req.query.rating);if(!Number.isInteger(rating)||rating<1||rating>5)throw new HttpError("Invalid rating filter.");conditions.push("(SELECT AVG(r.rating) FROM retail_reviews r WHERE r.product_id=products.id AND r.status='approved')>=?");params.push(rating);}
+    if (req.query.in_stock === "0")
+      conditions.push(
+        "NOT EXISTS(SELECT 1 FROM json_each(products.data,'$.variants') v WHERE json_extract(v.value,'$.manage_inventory')=0 OR json_extract(v.value,'$.inventory_quantity')>0)",
+      );
+    if (req.query.rating) {
+      const rating = Number(req.query.rating);
+      if (!Number.isInteger(rating) || rating < 1 || rating > 5)
+        throw new HttpError("Invalid rating filter.");
+      conditions.push(
+        "(SELECT AVG(r.rating) FROM retail_reviews r WHERE r.product_id=products.id AND r.status='approved')>=?",
+      );
+      params.push(rating);
+    }
     if (variantRules.length) {
       conditions.push(
         `EXISTS(SELECT 1 FROM json_each(products.data,'$.variants') v WHERE ${variantRules.join(" AND ")})`,
@@ -331,10 +350,25 @@ app.get("/api/categories", (_req, res) =>
   }),
 );
 app.get("/api/facets", (req, res) => {
-  const collection=req.query.collection ? getSetting('collections',[]).find(c=>c.id===req.query.collection&&c.published!==false) : null;
-  const products = productsAll().filter((p) => p.status === "published" && (!req.query.collection || collection?.productIds.includes(p.id)));
+  const collection = req.query.collection
+    ? getSetting("collections", []).find(
+        (c) => c.id === req.query.collection && c.published !== false,
+      )
+    : null;
+  const products = productsAll().filter(
+    (p) =>
+      p.status === "published" &&
+      (!req.query.collection || collection?.productIds.includes(p.id)),
+  );
   res.json({
-    maxPriceInCents:products.reduce((max,p)=>Math.max(max,...p.variants.map(v=>v.sale_price_in_cents??v.price_in_cents)),0),
+    maxPriceInCents: products.reduce(
+      (max, p) =>
+        Math.max(
+          max,
+          ...p.variants.map((v) => v.sale_price_in_cents ?? v.price_in_cents),
+        ),
+      0,
+    ),
     colors: [
       ...new Set(
         products.flatMap((p) =>
@@ -489,10 +523,37 @@ app.post(
 app.get("/api/admin/store", admin, (_req, res) =>
   res.json({ ...publicSettings(), _version: getSetting("store_version", 1) }),
 );
+app.post("/api/admin/design-preview", admin, (req, res, next) => {
+  try {
+    const settings = validateSettings(req.body);
+    if (getSetting("template")?.renderer === "gala")
+      settings.gala = validateGala(req.body.gala);
+    res.json({ ...settings, _template: getSetting("template") });
+  } catch (e) {
+    next(e);
+  }
+});
 app.put("/api/admin/store", admin, (req, res, next) => {
   try {
     const settings = validateSettings(req.body);
-    if(getSetting("template")?.renderer === "gala") settings.gala = validateGala(req.body.gala);
+    const currencyChanged =
+      getSetting("store").checkout.currency !== settings.checkout.currency;
+    if (
+      currencyChanged &&
+      !["keep_numbers", "reprice"].includes(req.body.currencyChange?.action)
+    )
+      throw new HttpError(
+        "Review currency impact in financial settings before changing it.",
+        409,
+      );
+    const rate =
+      currencyChanged && req.body.currencyChange.action === "reprice"
+        ? Number(req.body.currencyChange.rate)
+        : 1;
+    if (!Number.isFinite(rate) || rate <= 0 || rate > 100000)
+      throw new HttpError("Enter an explicit positive repricing rate.");
+    if (getSetting("template")?.renderer === "gala")
+      settings.gala = validateGala(req.body.gala);
     transaction(() => {
       const before = publicSettings();
       const version = getSetting("store_version", 1);
@@ -512,6 +573,17 @@ app.put("/api/admin/store", admin, (req, res, next) => {
       for (const product of productsAll()) {
         product.variants = product.variants.map((v) => ({
           ...v,
+          price_in_cents: money(
+            Math.round(v.price_in_cents * rate),
+            "Repriced amount",
+          ),
+          sale_price_in_cents:
+            v.sale_price_in_cents == null
+              ? null
+              : money(
+                  Math.round(v.sale_price_in_cents * rate),
+                  "Repriced sale",
+                ),
           currency: settings.checkout.currency,
           currency_info: {
             code: settings.checkout.currency,
@@ -706,8 +778,24 @@ app.post(
       const wide = req.body.kind === "wide";
       const logo = req.body.kind === "logo";
       const original = req.body.kind === "original";
-      const width = original ? 1800 : logo ? 640 : wide ? 1800 : hero ? 1600 : 800,
-        height = original ? 1800 : logo ? 240 : wide ? 1200 : hero ? 1800 : 1000;
+      const width = original
+          ? 1800
+          : logo
+            ? 640
+            : wide
+              ? 1800
+              : hero
+                ? 1600
+                : 800,
+        height = original
+          ? 1800
+          : logo
+            ? 240
+            : wide
+              ? 1200
+              : hero
+                ? 1800
+                : 1000;
       const output = await sharp(req.file.buffer, {
         limitInputPixels: 40000000,
       })
@@ -1321,6 +1409,7 @@ if (existsSync(dist)) {
     express.static(dist, {
       maxAge: "1h",
       setHeaders: (res, file) => {
+        if (res.getHeader("Cache-Control") === "private,no-store") return;
         if (
           file.includes(`${path.sep}assets${path.sep}`) &&
           /-[A-Za-z0-9_-]{8,}\.(?:css|js)$/.test(path.basename(file))
@@ -1409,4 +1498,4 @@ if (
     });
 }
 
-if(process.env.PLATFORM_MODE!=='1')migrateAtelierImages();
+if (process.env.PLATFORM_MODE !== "1") migrateAtelierImages();

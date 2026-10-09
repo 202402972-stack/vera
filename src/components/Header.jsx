@@ -16,6 +16,12 @@ const Header = () => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const itemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const navLinks = [
+    { path: "/shop", label: "Shop" },
+    { path: "/saved", label: language === "ar" ? "المفضلة" : "Saved" },
+    {
+      path: "/account",
+      label: language === "ar" ? "الحساب والتتبع" : "Account & tracking",
+    },
     {
       path: "/",
       label: "Home",

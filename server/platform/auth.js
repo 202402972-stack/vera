@@ -1,3 +1,5 @@
+import { db } from "../db.js";
+import { inTenant, adminCookie } from "../tenant.js";
 import { createRemoteJWKSet, jwtVerify } from "jose";
 import { sql, token, hash, owner, audit } from "./core.js";
 const keys = createRemoteJWKSet(
@@ -51,7 +53,14 @@ export function registerAuth(app, rate) {
     const state = token(),
       nonce = token(),
       verifier = token();
-    const intent = req.query.intent === "create" ? "create" : "workspace";
+    const intent = JSON.stringify({
+      intent: ["create", "import"].includes(req.query.intent)
+        ? req.query.intent
+        : "workspace",
+      template: ["form", "gala", "atelier"].includes(req.query.template)
+        ? req.query.template
+        : null,
+    });
     sql(
       "INSERT INTO platform_oauth(hash,nonce,verifier,intent,expires) VALUES(?,?,?,?,?)",
     ).run(hash(state), nonce, verifier, intent, Date.now() + 600000);
@@ -132,13 +141,44 @@ export function registerAuth(app, rate) {
         maxAge: 14 * 86400000,
       });
       res.redirect(
-        "/workspace" + (pending.intent === "create" ? "?create=1" : ""),
+        (() => {
+          let intent;
+          try {
+            intent = JSON.parse(pending.intent);
+          } catch {
+            intent = { intent: pending.intent };
+          }
+          return intent.intent === "create"
+            ? "/workspace/new" +
+                (intent.template ? "?template=" + intent.template : "")
+            : intent.intent === "import"
+              ? "/workspace/import"
+              : "/workspace";
+        })(),
       );
     } catch {
       res.redirect("/login?error=google");
     }
   });
   app.post("/api/platform/logout", requireUser, (req, res) => {
+    const sessionHash = hash(cookie(req, "vera_session"));
+    for (const bridge of sql(
+      "SELECT b.*,s.slug FROM platform_admin_bridges b JOIN platform_stores s ON s.id=b.store_id WHERE b.platform_session=?",
+    ).all(sessionHash)) {
+      inTenant(bridge.store_id, `/s/${bridge.slug}`, () => {
+        db.prepare("DELETE FROM admin_sessions WHERE token_hash=?").run(
+          bridge.token_hash,
+        );
+        res.clearCookie(adminCookie(), {
+          ...cookieOptions(req),
+          path: `/s/${bridge.slug}`,
+          sameSite: "strict",
+        });
+      });
+    }
+    sql("DELETE FROM platform_admin_bridges WHERE platform_session=?").run(
+      sessionHash,
+    );
     sql("DELETE FROM platform_sessions WHERE hash=?").run(
       hash(cookie(req, "vera_session")),
     );

@@ -1,0 +1,197 @@
+{
+  "capturedAt": "2026-10-09T01:57:30.339Z",
+  "branch": "codex/vera-ecosystem",
+  "base": "a4e0279",
+  "data": "Temporary browser fixtures; no production credentials or customer metrics",
+  "images": [
+    {
+      "source": "platform/hero-ar-390.png",
+      "artifact": "evidence/hero-ar-390.webp",
+      "title": "الهيرو الأصلي · العربية · 390",
+      "note": "الأصول والتركيب محفوظان؛ CTA ظاهر على الهاتف.",
+      "width": 390,
+      "height": 844,
+      "sha256": "b330ac2b9b5d2cb723816a93e5bf822109c6fe15cf0b3d91ac283712c44d1fe9"
+    },
+    {
+      "source": "platform/hero-en-1440.png",
+      "artifact": "evidence/hero-en-1440.webp",
+      "title": "الهيرو الأصلي · الإنجليزية · 1440",
+      "note": "نفس هوية الصفحة وأصولها قبل تطوير الأقسام اللاحقة.",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "1b36424da6c7d0e4f702b3a8217cbfe89de2afdf7aa2e4af41316d6c993a79e7"
+    },
+    {
+      "source": "platform/landing-ar-1440.png",
+      "artifact": "evidence/landing-ar-1440.webp",
+      "title": "اللاندنج الكاملة · العربية · 1440",
+      "note": "رحلتا الإنشاء والنقل، حدود واضحة، معاينات موسومة وأسئلة متطابقة مع وظائف النسخة.",
+      "width": 1440,
+      "height": 8601,
+      "sha256": "e888f2598f8e703a00548b93415194f27a848b238f5e9fdc6f89b5e37a7eb5ea"
+    },
+    {
+      "source": "platform/landing-en-390.png",
+      "artifact": "evidence/landing-en-390.webp",
+      "title": "اللاندنج · الإنجليزية · 390",
+      "note": "المقاسات وCTAs واللغة والنصوص فُحصت دون overflow.",
+      "width": 390,
+      "height": 10860,
+      "sha256": "196969bd52285ca266186128cd1fe84b821df6d50d2cabff5df295c96df6b6fe"
+    },
+    {
+      "source": "ecosystem/stores-ar-390.png",
+      "artifact": "evidence/stores-ar-390.webp",
+      "title": "متاجري · العربية · 390",
+      "note": "بطاقات الهوية، readiness وآخر تعديل، روابط الإدارة والزيارة والبحث.",
+      "width": 390,
+      "height": 3026,
+      "sha256": "a7275decabedf3d986bb46cda0fe680f94aab9dcf276c8820b9b2fc8d9682cda"
+    },
+    {
+      "source": "ecosystem/onboarding-ar-390.png",
+      "artifact": "evidence/onboarding-ar-390.webp",
+      "title": "اختيار القالب · العربية · 390",
+      "note": "اختيارات registry حقيقية بعد خطوة حفظ المسودة؛ لا كلمة مرور ثانية.",
+      "width": 390,
+      "height": 1960,
+      "sha256": "aaf8b06049961b46f656fd4e56834387a02297a5f6543c3539b1aac4d730600c"
+    },
+    {
+      "source": "ecosystem/onboarding-en-390.png",
+      "artifact": "evidence/onboarding-en-390.webp",
+      "title": "اختيار القالب · الإنجليزية · 390",
+      "note": "تظل نية القالب محفوظة عند الاستكمال.",
+      "width": 390,
+      "height": 1842,
+      "sha256": "b605c04cf483ac206ec71248b9ce9576d6b7379002396bf4a0d6e79ac479a413"
+    },
+    {
+      "source": "ecosystem/product-list-ar-390.png",
+      "artifact": "evidence/product-list-ar-390.webp",
+      "title": "قائمة المنتجات · العربية · 390",
+      "note": "صفوف مختصرة بصور وحالة وسعر ومخزون وإجراءات.",
+      "width": 390,
+      "height": 2004,
+      "sha256": "a62c03e347285066824c8f1cf607cbdc695c49d9c4fa27eb1e763f2f6a7dce64"
+    },
+    {
+      "source": "ecosystem/product-editor-ar-390.png",
+      "artifact": "evidence/product-editor-ar-390.webp",
+      "title": "محرر المنتج · العربية · 390",
+      "note": "المحرر يظهر وحده، أقسام واضحة وحفظ ظاهر؛ الإغلاق متاح من كل قسم.",
+      "width": 390,
+      "height": 2325,
+      "sha256": "e6f8df1bad524f87e521fd079c7fba54f26ec1f63fc094613ae69adc47cfadbb"
+    },
+    {
+      "source": "ecosystem/product-editor-en-390.png",
+      "artifact": "evidence/product-editor-en-390.webp",
+      "title": "محرر المنتج · الإنجليزية · 390",
+      "note": "حفظ واستكمال URL عميق بعد إعادة تحميل الصفحة.",
+      "width": 390,
+      "height": 2330,
+      "sha256": "77710bdcd25a0275750bbc34a6337e144bbcf6b9b8f53600e5695459b5dadcc2"
+    },
+    {
+      "source": "ecosystem/import-review-ar-390.png",
+      "artifact": "evidence/import-review-ar-390.webp",
+      "title": "مراجعة CSV · العربية · 390",
+      "note": "تم تصحيح سعر ومخزون ناقصين وحفظ المراجعة واستكمال التقرير. ظهور خطأ معاينة صورة يعكس عدم الوصول إلى مصدرها، ولا يُخفى.",
+      "width": 390,
+      "height": 2785,
+      "sha256": "403f9b002fb1d6c95cbcd35948464cb29a6a87c6f4c49c6671cf93ce43ed9168"
+    },
+    {
+      "source": "ecosystem/owner-stores-ar-390.png",
+      "artifact": "evidence/owner-stores-ar-390.webp",
+      "title": "مالك المنصة · العربية · 390",
+      "note": "فلاتر مستقلة، جاهزية مفصلة وتاريخ حالة؛ الوصول مخول للمالك فقط.",
+      "width": 390,
+      "height": 2141,
+      "sha256": "69f6fffd9512b054da6d20cd8638d35491009cde1c960240c58b1af206fb5865"
+    },
+    {
+      "source": "ecosystem/gala-design-ar-390.png",
+      "artifact": "evidence/gala-design-ar-390.webp",
+      "title": "GALA Studio · العربية · 390",
+      "note": "وضع المعاينة، canvas 390 scaled وواجهة عربية؛ لا صفحة إعدادات ممتدة فوق المعاينة.",
+      "width": 390,
+      "height": 1558,
+      "sha256": "f3852b745208c202a1fbc8c3b9cbde37b7bf886ad840623a4990543789e6b947"
+    },
+    {
+      "source": "ecosystem/gala-design-en-1440.png",
+      "artifact": "evidence/gala-design-en-1440.webp",
+      "title": "GALA Studio · الإنجليزية · 1440",
+      "note": "المحرر والمعاينة في مساحة واحدة بهوية الاستوديو.",
+      "width": 1440,
+      "height": 1554,
+      "sha256": "8d46bf69ac27f09caaa5747f1e0c43c044bd81daefe09e1fae269c46f719ec4b"
+    },
+    {
+      "source": "ecosystem/gala-unsaved-preview.png",
+      "artifact": "evidence/gala-unsaved-preview.webp",
+      "title": "GALA · معاينة تعديلات غير محفوظة",
+      "note": "اختبار API وpostMessage يثبت عرض التعديل مع بقاء الإعدادات المحفوظة كما كانت.",
+      "width": 1440,
+      "height": 1554,
+      "sha256": "8d46bf69ac27f09caaa5747f1e0c43c044bd81daefe09e1fae269c46f719ec4b"
+    },
+    {
+      "source": "ecosystem/form-browser-ar-360.png",
+      "artifact": "evidence/form-ar-360.webp",
+      "title": "FORM · العربية · 360",
+      "note": "إصلاح overflow الهيدر؛ كتالوج وخيارات وسعر من API.",
+      "width": 360,
+      "height": 1627,
+      "sha256": "1ac796b8fd20e897e42da53b1b2e6fc4f664c8f72221728161e7e4ca7ce3c947"
+    },
+    {
+      "source": "ecosystem/form-browser-en-1440.png",
+      "artifact": "evidence/form-en-1440.webp",
+      "title": "FORM · الإنجليزية · 1440",
+      "note": "شبكة عملية حديثة وصور القالب؛ الهوية مستقلة عن أتيليه.",
+      "width": 1440,
+      "height": 1328,
+      "sha256": "7368743bf79865296aec9102f1773e727b1e2e27903a2c836588dae508d50988"
+    },
+    {
+      "source": "ecosystem/maison-vera-ar-390.png",
+      "artifact": "evidence/atelier-ar-390.webp",
+      "title": "أتيليه · العربية · 390",
+      "note": "كتالوج بوتيك فعلي ومفضلة؛ الأصول الأربع الأصلية محفوظة.",
+      "width": 390,
+      "height": 2057,
+      "sha256": "4555aa6cb5c1e7349763cdfbd4e2c83a44384e4adac09ffb5c11cab39b7a014e"
+    },
+    {
+      "source": "ecosystem/maison-vera-en-1440.png",
+      "artifact": "evidence/atelier-en-1440.webp",
+      "title": "أتيليه · الإنجليزية · 1440",
+      "note": "هوية حرفية دافئة وبيانات كتالوج حقيقية داخل نطاق المتجر.",
+      "width": 1440,
+      "height": 2225,
+      "sha256": "45e86f5688c2ed4403a13f01a04bfaba21979e4bd2b00962f97f1d7fe40679c7"
+    },
+    {
+      "source": "ecosystem/form-guest-order-390.png",
+      "artifact": "evidence/form-guest-order.webp",
+      "title": "FORM · تأكيد شراء كضيف",
+      "note": "طلب COD حقيقي في قاعدة fixture مؤقتة، مع receipt وتتبّع؛ لا عملية دفع حي.",
+      "width": 390,
+      "height": 1746,
+      "sha256": "6719d879961b0c3f15c54ebebfb9f867efbbdffdb4c347b8870eadbf6912971f"
+    },
+    {
+      "source": "ecosystem/atelier-guest-order-390.png",
+      "artifact": "evidence/atelier-guest-order.webp",
+      "title": "أتيليه · تأكيد شراء كضيف",
+      "note": "المفضلة والمنتج والسلة والطلب تعمل كرحلة متصلة.",
+      "width": 390,
+      "height": 1666,
+      "sha256": "6604276498e0366d9e6a3bd25dcd7a71713965bced84357d6325c54ebccef491"
+    }
+  ]
+}

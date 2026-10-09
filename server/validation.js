@@ -288,6 +288,9 @@ export function validateSettings(s) {
   if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
     throw new HttpError("Enter a valid contact email.");
   return {
+    primaryLanguage: ["ar", "en"].includes(s.primaryLanguage)
+      ? s.primaryLanguage
+      : "en",
     brand: validateBrand(s.brand),
     ...(s.form
       ? {
@@ -304,6 +307,21 @@ export function validateSettings(s) {
               ? imageUrl(s.form.campaignImage)
               : "",
             campaignEnabled: s.form.campaignEnabled === true,
+            newsletterEnabled: s.form.newsletterEnabled === true,
+            featuredIds: Array.isArray(s.form.featuredIds)
+              ? s.form.featuredIds
+                  .slice(0, 20)
+                  .map((id) => text(id, "Product ID", 100))
+              : [],
+            sectionOrder:
+              Array.isArray(s.form.sectionOrder) &&
+              s.form.sectionOrder.length === 3 &&
+              new Set(s.form.sectionOrder).size === 3 &&
+              s.form.sectionOrder.every((k) =>
+                ["categories", "arrivals", "campaign"].includes(k),
+              )
+                ? s.form.sectionOrder
+                : ["categories", "arrivals", "campaign"],
             categoriesEnabled: s.form.categoriesEnabled === true,
             arrivalsEnabled: s.form.arrivalsEnabled !== false,
           },

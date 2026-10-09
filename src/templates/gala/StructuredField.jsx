@@ -38,7 +38,94 @@ export function StructuredField({
   const { language } = useLanguage(),
     copy = (en, ar) => (language === "ar" ? ar : en);
   const key = path.split(".").at(-1);
-  const title = label || human(key);
+  const labels = {
+    images: ["Images", "الصور"],
+    positions: ["Image focal position", "موضع التركيز"],
+    primary: ["Primary colour", "اللون الأساسي"],
+    secondary: ["Secondary colour", "اللون الثانوي"],
+    title: ["Heading", "العنوان"],
+    text: ["Description", "الوصف"],
+    button: ["Browse button", "زر التصفح"],
+    enabled: ["Visible", "ظاهر"],
+    image: ["Image", "الصورة"],
+    label: ["Label", "التسمية"],
+    path: ["Link", "الرابط"],
+    background: ["Background", "الخلفية"],
+    foreground: ["Text colour", "لون النص"],
+    body: ["Body text", "المتن"],
+    heading: ["Heading style", "خط العنوان"],
+    show: ["Show", "إظهار"],
+    gap: ["Spacing", "المسافة"],
+    padding: ["Padding", "المسافة الداخلية"],
+    columns: ["Columns", "الأعمدة"],
+    mobile: ["Mobile", "الموبايل"],
+    desktop: ["Desktop", "الديسكتوب"],
+    name: ["Name", "الاسم"],
+    answer: ["Answer", "الإجابة"],
+    question: ["Question", "السؤال"],
+    storyImage: ["Story image", "صورة الحكاية"],
+  };
+  Object.assign(labels, {
+    schemaVersion: ["Schema version", "إصدار الإعدادات"],
+    palette: ["Colours", "الألوان"],
+    surface: ["Panel colour", "لون المساحات"],
+    ink: ["Text colour", "لون النص"],
+    muted: ["Secondary text", "النص الثانوي"],
+    onPrimary: ["Text on primary colour", "النص فوق اللون الأساسي"],
+    accent: ["Accent colour", "لون التمييز"],
+    border: ["Borders", "الحدود"],
+    footerBackground: ["Footer background", "خلفية الفوتر"],
+    footerInk: ["Footer text", "نص الفوتر"],
+    typography: ["Typography", "الخطوط"],
+    bodySize: ["Body size", "حجم المتن"],
+    headingScale: ["Heading scale", "مقياس العناوين"],
+    layout: ["Layout", "التخطيط"],
+    width: ["Content width", "عرض المحتوى"],
+    sectionSpacing: ["Section spacing", "المسافة بين الأقسام"],
+    cardRatio: ["Image ratio", "نسبة الصورة"],
+    navigation: ["Main navigation", "القائمة الرئيسية"],
+    menu: ["Menu contents", "محتويات القائمة"],
+    mobileNavigation: ["Mobile navigation", "تنقل الموبايل"],
+    hero: ["Hero collage", "صور الواجهة"],
+    primaryLink: ["Primary button link", "رابط الزر الأساسي"],
+    secondaryLink: ["Secondary button link", "رابط الزر الثانوي"],
+    sections: ["Homepage order", "ترتيب الصفحة"],
+    id: ["Section", "القسم"],
+    headings: ["Section headings", "عناوين الأقسام"],
+    collections: ["Collections", "المجموعات"],
+    trending: ["Trending", "الرائج"],
+    lookbook: ["Lookbook", "الإطلالات"],
+    testimonials: ["Customer stories", "آراء العملاء"],
+    faq: ["FAQs", "الأسئلة الشائعة"],
+    trendingIds: ["Trending products", "المنتجات الرائجة"],
+    lookbookIds: ["Lookbook products", "منتجات الإطلالة"],
+    collectionIds: ["Featured collections", "المجموعات المختارة"],
+    storyButton: ["Story button", "زر الحكاية"],
+    services: ["Service promises", "مزايا الخدمة"],
+    icon: ["Icon", "الأيقونة"],
+    productFaq: ["Product FAQs", "أسئلة المنتج"],
+    product: ["Product experience", "تجربة المنتج"],
+    stickyBuy: ["Sticky purchase button", "زر شراء ثابت"],
+    showStock: ["Show inventory", "إظهار المخزون"],
+    showSku: ["Show SKU", "إظهار رمز المنتج"],
+    sharing: ["Sharing", "المشاركة"],
+    reviews: ["Reviews", "التقييمات"],
+    bundles: ["Bundles", "المجموعات المقترحة"],
+    related: ["Related products", "منتجات مرتبطة"],
+    recent: ["Recently viewed", "شوهدت مؤخرًا"],
+    recommendations: ["Recommendations", "الاقتراحات"],
+    cart: ["Cart", "السلة"],
+    notes: ["Order notes", "ملاحظات الطلب"],
+    shippingProgress: ["Shipping progress", "التقدم نحو الشحن المجاني"],
+    newsletter: ["Newsletter", "النشرة البريدية"],
+    footerColumns: ["Footer columns", "أعمدة الفوتر"],
+    links: ["Links", "الروابط"],
+    currency: ["Display currencies", "عملات العرض"],
+    codes: ["Currency codes", "رموز العملات"],
+    rating: ["Rating", "التقييم"],
+    socials: ["Social links", "التواصل الاجتماعي"],
+  });
+  const title = labels[key] ? copy(...labels[key]) : label || human(key);
   if (typeof value === "boolean")
     return (
       <label className="gs-toggle">
@@ -56,7 +143,10 @@ export function StructuredField({
       <fieldset className="gs-array">
         <legend>{title}</legend>
         {value.map((item, i) => (
-          <div className="gs-array-item" key={i}>
+          <details className="gs-array-item" key={i} open={i === 0}>
+            <summary>
+              {title} {i + 1}
+            </summary>
             <div className="gs-array-tools">
               <span>{i + 1}</span>
               <button
@@ -103,7 +193,7 @@ export function StructuredField({
                 onChange(value.map((x, j) => (j === i ? next : x)))
               }
             />
-          </div>
+          </details>
         ))}
         {!fixed && (
           <button
@@ -131,7 +221,15 @@ export function StructuredField({
           <StructuredField
             key={k}
             path={path + "." + k}
-            label={k === "en" ? "English" : k === "ar" ? "العربية" : human(k)}
+            label={
+              k === "en"
+                ? "English"
+                : k === "ar"
+                  ? "العربية"
+                  : labels[k]
+                    ? copy(...labels[k])
+                    : human(k)
+            }
             value={v}
             options={options}
             onError={onError}
@@ -149,6 +247,19 @@ export function StructuredField({
         onError={onError}
         label={title}
       />
+    );
+  if (path.startsWith("hero.positions"))
+    return (
+      <label className="gs-field">
+        {copy("Image focal point", "نقطة التركيز بالصورة")}
+        <input
+          type="range"
+          min="0"
+          max="100"
+          value={value}
+          onChange={(e) => onChange(Number(e.target.value))}
+        />
+      </label>
     );
   if (/^#[a-f\d]{6}$/i.test(value) && path.includes("palette"))
     return (
@@ -192,7 +303,25 @@ export function StructuredField({
               key={typeof c === "string" ? c : c.id}
               value={typeof c === "string" ? c : c.id}
             >
-              {typeof c === "string" ? c : c.title || c.name}
+              {typeof c === "string"
+                ? language === "ar"
+                  ? {
+                      portrait: "طولية",
+                      square: "مربعة",
+                      landscape: "عرضية",
+                      truck: "الشحن",
+                      lock: "الأمان",
+                      return: "الإرجاع",
+                      chat: "المساعدة",
+                      products: "المنتجات",
+                      collections: "المجموعات",
+                      Reference: "مرجعي",
+                      Serif: "تحريري",
+                      Sans: "عصري",
+                      System: "خط النظام",
+                    }[c] || c
+                  : c
+                : c.title || c.name}
             </option>
           ))}
         </select>

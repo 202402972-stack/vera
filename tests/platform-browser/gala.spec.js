@@ -145,8 +145,8 @@ test("GALA merchant: contact and newsletter arrive in dedicated dashboard; desig
     .getByLabel("English", { exact: true })
     .nth(1);
   await field.fill("The latest edit");
-  await page.getByRole("button", { name: "Publish changes" }).click();
-  await expect(page.locator(".gs-notice")).toContainText("Changes published");
+  await page.getByRole("button", { name: "Save changes" }).click();
+  await expect(page.locator(".gs-notice")).toContainText("Changes saved");
   await expect(
     page
       .frameLocator("iframe")
