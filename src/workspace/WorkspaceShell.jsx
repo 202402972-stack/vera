@@ -6,10 +6,11 @@ import { useLanguage } from "@/i18n/LanguageContext";
 import { StoreProvider } from "@/hooks/useStore";
 import { StoreScopeProvider } from "./StoreScope";
 import { request } from "@/platform/api";
-import { Copy } from "lucide-react";
+import { Copy, Globe2 } from "lucide-react";
 import "./workspace.css";
 const Admin = lazy(() => import("@/pages/AdminPage"));
 const GalaAdmin = lazy(() => import("@/templates/gala/GalaAdmin"));
+const DomainSettings = lazy(() => import("./DomainSettings"));
 export default function WorkspaceShell({ config }) {
   const { id, section } = useParams(),
     navigate = useNavigate(),
@@ -87,8 +88,15 @@ export default function WorkspaceShell({ config }) {
                   ? t("متاح", "Live")
                   : t("غير متاح", "Unavailable")}
             </span>
-            <a className="workspace-visit"
-              href={state.store.url + (state.store.publicationState === "draft" ? "?preview=1" : "")}
+            <a
+              className="workspace-visit"
+              href={
+                state.store.publicationState === "draft"
+                  ? state.store.url + "?preview=1"
+                  : state.store.customDomain
+                    ? `https://${state.store.customDomain}`
+                    : state.store.url
+              }
               target="_blank"
               rel="noreferrer"
             >
@@ -96,10 +104,24 @@ export default function WorkspaceShell({ config }) {
                 ? t("معاينة المسودة", "Preview draft")
                 : t("زيارة المتجر", "Visit store")}
             </a>
-            <button className="workspace-copy" aria-label={t("نسخ رابط المتجر", "Copy store link")}
+            <Link
+              className="workspace-domain"
+              to={`/workspace/stores/${id}/domain`}
+              aria-label={t("ربط الدومين", "Connect domain")}
+              title={t("ربط الدومين", "Connect domain")}
+            >
+              <Globe2 size={17} aria-hidden="true" />
+              <span>{t("الدومين", "Domain")}</span>
+            </Link>
+            <button
+              className="workspace-copy"
+              aria-label={t("نسخ رابط المتجر", "Copy store link")}
               onClick={() =>
                 navigator.clipboard.writeText(
-                  window.location.origin + state.store.url,
+                  state.store.customDomain &&
+                    state.store.publicationState !== "draft"
+                    ? `https://${state.store.customDomain}`
+                    : window.location.origin + state.store.url,
                 )
               }
             >
@@ -118,6 +140,21 @@ export default function WorkspaceShell({ config }) {
         </div>
       ) : !state ? (
         <p role="status">{t("جارٍ فتح المتجر…", "Opening store…")}</p>
+      ) : section === "domain" ? (
+        <Suspense fallback={<p role="status">…</p>}>
+          <DomainSettings
+            store={state.store}
+            onChange={(customDomain) =>
+              setState(
+                (current) =>
+                  current && {
+                    ...current,
+                    store: { ...current.store, customDomain },
+                  },
+              )
+            }
+          />
+        </Suspense>
       ) : (
         <StoreScopeProvider key={id} store={state.store}>
           <StoreProvider mode="admin">

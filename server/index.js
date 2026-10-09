@@ -32,6 +32,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import {
   db,
+  rawDb,
   dataDir,
   getSetting,
   setSetting,
@@ -187,6 +188,16 @@ const publicSettings = () => {
   return {
     ...store,
     ...(tenantId() ? { _template: getSetting("template") } : {}),
+    ...(tenantId()
+      ? {
+          _customDomain:
+            rawDb
+              .prepare(
+                "SELECT hostname FROM platform_domains WHERE store_id=? AND state='active' LIMIT 1",
+              )
+              .get(tenantId())?.hostname || null,
+        }
+      : {}),
     brand: resolveBrand(store.brand),
     commerce: { ...defaultCommerce, ...store.commerce },
   };
@@ -838,7 +849,7 @@ app.post(
       if (previous) {
         let payment_url = null;
         try {
-          payment_url = await beginShopperPayment(previous);
+          payment_url = await beginShopperPayment(previous, req.customOrigin);
         } catch {}
         return res.json({
           order: orderObject(previous, false),
@@ -994,7 +1005,7 @@ app.post(
       let payment_url = null,
         payment_error = "";
       try {
-        payment_url = await beginShopperPayment(row);
+        payment_url = await beginShopperPayment(row, req.customOrigin);
       } catch (e) {
         payment_error = e.message;
       }

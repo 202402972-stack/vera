@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import {
   stmt,
+  rawDb,
   getSetting,
   setSetting,
   encrypt,
@@ -9,7 +10,7 @@ import {
   productById,
   writeProduct,
 } from "./db.js";
-import { tenantPath } from "./tenant.js";
+import { tenantId, tenantPath } from "./tenant.js";
 import { HttpError, text } from "./validation.js";
 const base = "https://accept.paymob.com";
 const fields = [
@@ -92,7 +93,13 @@ async function provider(path, { body, auth } = {}) {
     );
   return r.json();
 }
-export async function beginShopperPayment(row) {
+const callbackBase = () =>
+  tenantId()
+    ? `/s/${rawDb.prepare("SELECT slug FROM platform_stores WHERE id=?").get(tenantId()).slug}`
+    : tenantPath() === "/"
+      ? ""
+      : tenantPath();
+export async function beginShopperPayment(row, returnOrigin = null) {
   const order = JSON.parse(row.data);
   if (order.payment_method !== "paymob") return null;
   if (order.payment_status === "paid") return null;
@@ -131,8 +138,8 @@ export async function beginShopperPayment(row) {
       payment_methods: [Number(c.integrationId)],
       special_reference: reference,
       expiration: 3600,
-      notification_url: `${origin}${tenantPath()}/api/payments/webhook`,
-      redirection_url: `${origin}${tenantPath()}/success#${row.token}`,
+      notification_url: `${origin}${callbackBase()}/api/payments/webhook`,
+      redirection_url: `${returnOrigin || origin + callbackBase()}/success#${row.token}`,
       billing_data: {
         first_name: names[0],
         last_name: names.slice(1).join(" ") || names[0],
@@ -285,7 +292,7 @@ export function registerShopperPayments(app, admin, limit) {
       hasSecretKey: !!c.secretKey,
       hasApiKey: !!c.apiKey,
       hasHmacSecret: !!c.hmacSecret,
-      callbackPath: tenantPath() + "/api/payments/webhook",
+      callbackPath: callbackBase() + "/api/payments/webhook",
       httpsReady: !!process.env.PUBLIC_URL?.startsWith("https://"),
     });
   });
@@ -362,7 +369,9 @@ export function registerShopperPayments(app, admin, limit) {
         );
         if (!row || row.status === "cancelled")
           throw new HttpError("Order is not available for payment.", 409);
-        res.json({ payment_url: await beginShopperPayment(row) });
+        res.json({
+          payment_url: await beginShopperPayment(row, req.customOrigin),
+        });
       } catch (e) {
         next(e);
       }

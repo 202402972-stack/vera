@@ -14,6 +14,7 @@ import {
   KeyRound,
   Plus,
   CreditCard,
+  Globe2,
 } from "lucide-react";
 
 import "./platform.css";
@@ -62,16 +63,30 @@ function StoreCard({ store, templates, onRefresh, onAction, newWorkspace }) {
         <span className="v-eyebrow">{template?.name}</span>
         <h2>{store.name}</h2>
         <div className="v-store-url">
-          <a href={store.url + (store.publicationState === "draft" ? "?preview=1" : "")} target="_blank" rel="noreferrer" dir="ltr">
-            {window.location.host}
-            {store.url}
+          <a
+            href={
+              store.publicationState === "draft"
+                ? store.url + "?preview=1"
+                : store.customDomain
+                  ? `https://${store.customDomain}`
+                  : store.url
+            }
+            target="_blank"
+            rel="noreferrer"
+            dir="ltr"
+          >
+            {store.customDomain && store.publicationState !== "draft"
+              ? store.customDomain
+              : window.location.host + store.url}
           </a>
           <button
             aria-label={t("نسخ الرابط", "Copy link")}
             onClick={() =>
               action(async () => {
                 await navigator.clipboard.writeText(
-                  window.location.origin + store.url,
+                  store.customDomain && store.publicationState !== "draft"
+                    ? `https://${store.customDomain}`
+                    : window.location.origin + store.url,
                 );
                 setNotice(t("تم نسخ الرابط", "Link copied"));
               })
@@ -107,14 +122,30 @@ function StoreCard({ store, templates, onRefresh, onAction, newWorkspace }) {
           </Button>
           <a
             className="v-icon-link"
-            href={store.url + (store.publicationState === "draft" ? "?preview=1" : "")}
-            aria-label={store.publicationState === "draft" ? t("معاينة المسودة", "Preview draft") : t("زيارة المتجر", "Visit store")}
+            href={
+              store.publicationState === "draft"
+                ? store.url + "?preview=1"
+                : store.customDomain
+                  ? `https://${store.customDomain}`
+                  : store.url
+            }
+            aria-label={
+              store.publicationState === "draft"
+                ? t("معاينة المسودة", "Preview draft")
+                : t("زيارة المتجر", "Visit store")
+            }
             target="_blank"
             rel="noreferrer"
           >
             <ExternalLink size={19} />
           </a>
         </div>
+        <Link
+          className="v-text-link"
+          to={`/workspace/stores/${store.id}/domain`}
+        >
+          <Globe2 size={16} /> {t("اربط دومينك", "Connect your domain")}
+        </Link>
         <div className="v-store-url">
           <Link to={store.workspaceUrl} dir="ltr">
             {store.workspaceUrl}

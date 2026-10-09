@@ -2,6 +2,8 @@ import { AsyncLocalStorage } from "node:async_hooks";
 export const tenantContext = new AsyncLocalStorage();
 export const tenantId = () => tenantContext.getStore()?.id || 0;
 export const tenantPath = () => tenantContext.getStore()?.base || "/";
+export const tenantUrl = (path) =>
+  (tenantPath() === "/" ? "" : tenantPath()) + path;
 export const adminCookie = () =>
   tenantId() ? `store_admin_${tenantId()}` : "store_admin";
 export function inTenant(id, base, fn) {
@@ -20,9 +22,14 @@ const identifiers = new Set([
   "order_history",
   "subscribers",
   "variant_lookup",
-  "shoppers", "shopper_sessions", "retail_reviews", "retail_returns",
+  "shoppers",
+  "shopper_sessions",
+  "retail_reviews",
+  "retail_returns",
 ]);
-export function registerTenantIdentifiers(names) { for(const name of names) identifiers.add(name); }
+export function registerTenantIdentifiers(names) {
+  for (const name of names) identifiers.add(name);
+}
 export function tenantSQL(sql, id = tenantId(), extra = []) {
   if (!id) return sql;
   if (!Number.isSafeInteger(id) || id < 1)

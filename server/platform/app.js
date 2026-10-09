@@ -8,6 +8,13 @@ import { features, saveFeatures } from "./features.js";
 import { registerConnections } from "../imports/connections.js";
 import { registerOwner } from "./owner.js";
 import { registerPlatformSEO } from "../seo.js";
+import {
+  activeDomain,
+  domainProviderReady,
+  isPlatformHost,
+  pendingDomain,
+  registerDomains,
+} from "./domains.js";
 import { registerImports } from "../imports/routes.js";
 import {
   displayPricing,
@@ -29,6 +36,7 @@ import {
   registerPaymobWebhook,
 } from "./paymob.js";
 import express from "express";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import helmet from "helmet";
 import compression from "compression";
 import path from "node:path";
@@ -65,6 +73,50 @@ import {
 ensurePreviews();
 recordMigrations();
 export const app = express();
+app.use((req, res, next) => {
+  let hostname = (req.get("host") || "")
+    .toLowerCase()
+    .replace(/:\d+$/, "")
+    .replace(/\.$/, "");
+  const forwarded = req.get("x-vera-domain");
+  if (forwarded) {
+    const timestamp = req.get("x-vera-domain-timestamp") || "";
+    const signature = req.get("x-vera-domain-signature") || "";
+    const secret = process.env.DOMAIN_PROXY_SECRET;
+    const expected =
+      secret &&
+      createHmac("sha256", secret)
+        .update(`${forwarded}\n${timestamp}`)
+        .digest("hex");
+    if (
+      !secret ||
+      secret.length < 32 ||
+      !/^\d{13}$/.test(timestamp) ||
+      Math.abs(Date.now() - Number(timestamp)) > 60000 ||
+      !/^[a-f0-9]{64}$/.test(signature) ||
+      !timingSafeEqual(
+        Buffer.from(signature, "hex"),
+        Buffer.from(expected, "hex"),
+      )
+    )
+      return res.status(403).send("Invalid domain proxy signature.");
+    hostname = forwarded.toLowerCase();
+  }
+  if (isPlatformHost(hostname) || req.path === "/api/health") return next();
+  if (req.path === "/.well-known/vera-domain-check") {
+    const pending = pendingDomain(hostname);
+    if (pending)
+      return res
+        .type("text/plain")
+        .set("Cache-Control", "no-store")
+        .send(pending.verification_token);
+  }
+  const store = activeDomain(hostname);
+  if (!store) return res.status(421).send("Domain is not connected to VÉRA.");
+  req.customStoreHost = true;
+  req.customOrigin = `https://${hostname}`;
+  return serveStore(req, res, next, store, "/");
+});
 registerPlatformSEO(app, sql);
 app.set("trust proxy", 1);
 app.disable("x-powered-by");
@@ -193,6 +245,7 @@ app.get("/api/platform/config", async (req, res) => {
           },
         },
     features: features(),
+    customDomainsReady: domainProviderReady,
     importLimits: limits,
     plan: plan
       ? { ...plan, planId: paymobSelected ? providerPlan()?.id : plan.planId }
@@ -243,6 +296,7 @@ function owned(req, res, next) {
   req.store = s;
   next();
 }
+registerDomains(app, requireUser, rate, owned);
 app.patch("/api/platform/stores/:id", requireUser, rate, owned, (req, res) => {
   if (typeof req.body.paused !== "boolean")
     return res.status(400).json({ error: "A paused state is required." });
@@ -457,13 +511,9 @@ app.patch("/api/platform/owner/settings", requireOwner, rate, (req, res) => {
   audit(req.user.id, "owner.settings_updated");
   res.json({ ok: true });
 });
-app.use("/s/:slug", (req, res, next) => {
-  const s = sql("SELECT * FROM platform_stores WHERE slug=?").get(
-    req.params.slug,
-  );
-  if (!s) return res.status(404).send("Store not found.");
+function serveStore(req, res, next, s, base) {
   if (req.method === "POST" && req.path === "/api/payments/webhook")
-    return inTenant(s.id, `/s/${s.slug}`, () => storeApp(req, res, next));
+    return inTenant(s.id, base, () => storeApp(req, res, next));
   const adminRoute =
     req.path === "/admin" || req.path.startsWith("/api/admin/");
   const privatePreview = previewAuthorized(req, s);
@@ -538,7 +588,14 @@ app.use("/s/:slug", (req, res, next) => {
         console.error("Commerce funnel event could not be recorded");
       }
     });
-  return inTenant(s.id, `/s/${s.slug}`, () => storeApp(req, res, next));
+  return inTenant(s.id, base, () => storeApp(req, res, next));
+}
+app.use("/s/:slug", (req, res, next) => {
+  const s = sql("SELECT * FROM platform_stores WHERE slug=?").get(
+    req.params.slug,
+  );
+  if (!s) return res.status(404).send("Store not found.");
+  return serveStore(req, res, next, s, `/s/${s.slug}`);
 });
 app.use("/demo/:template", (req, res, next) => {
   const preview = sql("SELECT * FROM platform_templates WHERE id=?").get(

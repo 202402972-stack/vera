@@ -8,10 +8,10 @@ const escape = (value) =>
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&apos;");
 const origin = (req) =>
-  (process.env.PUBLIC_URL || `${req.protocol}://${req.get("host")}`).replace(
-    /\/$/,
-    "",
-  );
+  (req.customStoreHost
+    ? req.customOrigin
+    : process.env.PUBLIC_URL || `${req.protocol}://${req.get("host")}`
+  ).replace(/\/$/, "");
 const document = (tag, items) =>
   `<?xml version="1.0" encoding="UTF-8"?><${tag} xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${items}</${tag}>`;
 export function registerStoreSEO(app) {
@@ -53,7 +53,7 @@ export function registerStoreSEO(app) {
 export function registerPlatformSEO(app, sql) {
   app.get("/sitemap.xml", (req, res) => {
     const stores = sql(
-      "SELECT slug FROM platform_stores WHERE publication_state='published' AND paused=0 AND suspended=0 AND max(trial_until,access_until)>? ORDER BY id LIMIT 10000",
+      "SELECT s.slug,d.hostname FROM platform_stores s LEFT JOIN platform_domains d ON d.store_id=s.id AND d.state='active' WHERE s.publication_state='published' AND s.paused=0 AND s.suspended=0 AND max(s.trial_until,s.access_until)>? ORDER BY s.id LIMIT 10000",
     ).all(Date.now());
     res
       .type("application/xml")
@@ -65,7 +65,7 @@ export function registerPlatformSEO(app, sql) {
             stores
               .map(
                 (s) =>
-                  `<sitemap><loc>${escape(origin(req) + "/s/" + s.slug + "/sitemap.xml")}</loc></sitemap>`,
+                  `<sitemap><loc>${escape(s.hostname ? "https://" + s.hostname + "/sitemap.xml" : origin(req) + "/s/" + s.slug + "/sitemap.xml")}</loc></sitemap>`,
               )
               .join(""),
         ),

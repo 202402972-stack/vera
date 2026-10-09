@@ -11,6 +11,8 @@ One service runs the entire platform; stores do not create Railway services. Use
 
 The HTTPS domain must match Google callback registration and `PUBLIC_URL`. Changing domains requires updating both Google and Paymob callbacks. Requests use same-origin cookies. No customer dashboard password is put in environment variables; each store has its own salted hash.
 
+Merchant-owned storefront domains are configured separately from `PUBLIC_URL`. To enable them, set up Cloudflare for SaaS, the signed edge Worker, DNS target and certificate credentials described in [DOMAINS-AR.md](ecosystem/DOMAINS-AR.md). Railway's platform domain remains the OAuth, billing and workspace origin; never replace `PUBLIC_URL` with an individual merchant domain.
+
 ## Data and backups
 
 The volume contains `store.sqlite` (including WAL files), `uploads/`, and `.encryption-key`. The key decrypts Telegram credentials and pending payment URLs. **Keep the key with the database backup.** Copying only the SQLite main file while WAL writes are active is not a consistent backup.

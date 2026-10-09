@@ -9,7 +9,7 @@ import {
   setSetting,
   productById,
 } from "./db.js";
-import { tenantPath, tenantId } from "./tenant.js";
+import { tenantPath, tenantId, tenantUrl } from "./tenant.js";
 import { HttpError, text } from "./validation.js";
 const derive = promisify(scrypt);
 const hash = (v) => createHash("sha256").update(v).digest("hex");
@@ -156,7 +156,7 @@ export function registerRetail(app, admin, limit) {
         customer_id: id,
       });
       res.json({
-        url: tenantPath() + "/account?recover=" + token,
+        url: tenantUrl("/account?recover=" + token),
         expiresInMinutes: 30,
       });
     } catch (e) {

@@ -304,10 +304,15 @@ export default function Home({ config }) {
               "هل يدعم العربية والدومين الخاص؟",
               "What about Arabic and a custom domain?",
             ),
-            t(
-              "واجهات عربية وإنجليزية ومحتوى قابل للتعديل. رابط متجرك حاليًا تحت /s/اسم-المتجر؛ ربط دومين مستقل ليس خدمة مفعلة في هذه النسخة.",
-              "Arabic and English interfaces with editable content. Your store currently uses /s/store-name; independent custom-domain mapping is not enabled in this version.",
-            ),
+            config.customDomainsReady
+              ? t(
+                  "واجهات عربية وإنجليزية ومحتوى قابل للتعديل. ابدأ برابط VÉRA، ثم اربط دومين اشتريته بنفسك من مساحة متجرك بعد ضبط DNS والتحقق من شهادة HTTPS.",
+                  "Arabic and English interfaces with editable content. Start with a VÉRA address, then connect a domain you bought through your workspace after DNS and HTTPS verification.",
+                )
+              : t(
+                  "واجهات عربية وإنجليزية ومحتوى قابل للتعديل. ربط الدومين الخاص من مساحة المتجر متاح بعد إعداد خدمة الدومينات على الاستضافة.",
+                  "Arabic and English interfaces with editable content. Custom-domain connection becomes available in your workspace after hosting setup is complete.",
+                ),
           ],
           [
             t("أقدر أغيّر شكل البراند؟", "Can I make it feel like my brand?"),

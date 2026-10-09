@@ -24,6 +24,8 @@ CREATE TABLE IF NOT EXISTS platform_sessions(hash TEXT PRIMARY KEY,user_id INTEG
 CREATE TABLE IF NOT EXISTS platform_oauth(hash TEXT PRIMARY KEY,nonce TEXT NOT NULL,verifier TEXT NOT NULL,intent TEXT NOT NULL,expires INTEGER NOT NULL);
 CREATE TABLE IF NOT EXISTS platform_stores(id INTEGER PRIMARY KEY,owner_id INTEGER NOT NULL REFERENCES platform_users(id),slug TEXT UNIQUE NOT NULL,name TEXT NOT NULL,template TEXT NOT NULL,paused INTEGER NOT NULL DEFAULT 0,suspended INTEGER NOT NULL DEFAULT 0,created INTEGER NOT NULL,trial_until INTEGER NOT NULL,access_until INTEGER NOT NULL DEFAULT 0,customer TEXT,subscription TEXT UNIQUE,billing_status TEXT NOT NULL DEFAULT 'trial',checkout TEXT);
 CREATE INDEX IF NOT EXISTS platform_stores_owner ON platform_stores(owner_id);
+CREATE TABLE IF NOT EXISTS platform_domains(id INTEGER PRIMARY KEY,store_id INTEGER NOT NULL REFERENCES platform_stores(id),hostname TEXT NOT NULL UNIQUE,verification_token TEXT NOT NULL,state TEXT NOT NULL DEFAULT 'pending',provider_id TEXT,created_at INTEGER NOT NULL,checked_at INTEGER,activated_at INTEGER);
+CREATE INDEX IF NOT EXISTS platform_domains_store ON platform_domains(store_id,state);
 CREATE TABLE IF NOT EXISTS platform_audit(id INTEGER PRIMARY KEY,actor INTEGER,action TEXT NOT NULL,store_id INTEGER,at INTEGER NOT NULL,detail TEXT);
 CREATE TABLE IF NOT EXISTS platform_admin_bridges(platform_session TEXT NOT NULL,store_id INTEGER NOT NULL,token_hash TEXT NOT NULL,PRIMARY KEY(platform_session,store_id,token_hash));
 CREATE TABLE IF NOT EXISTS platform_billing_events(id TEXT PRIMARY KEY,at INTEGER NOT NULL);
@@ -115,6 +117,10 @@ export const publicStore = (s) => ({
     !s.suspended &&
     Math.max(s.trial_until, s.access_until) > Date.now(),
   url: `/s/${s.slug}`,
+  customDomain:
+    sql(
+      "SELECT hostname FROM platform_domains WHERE store_id=? AND state='active' ORDER BY activated_at DESC LIMIT 1",
+    ).get(s.id)?.hostname || null,
   adminUrl: `/s/${s.slug}/admin`,
   workspaceUrl: `/workspace/stores/${s.id}/overview`,
 });

@@ -5,6 +5,7 @@ export const ecosystemMigrations = [
   "2026-10-09-onboarding-and-events",
   "2026-10-09-imports-connections-and-mappings",
   "2026-10-09-plan-snapshots",
+  "2026-10-09-custom-domain-claims",
 ];
 export function recordMigrations() {
   rawDb.exec(
