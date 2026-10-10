@@ -2,12 +2,10 @@
 FROM node:24-bookworm-slim AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN --mount=type=secret,id=proxy_ca \
-    if [ -f /run/secrets/proxy_ca ]; then NODE_EXTRA_CA_CERTS=/run/secrets/proxy_ca npm ci --strict-ssl=true; else npm ci; fi
+RUN --mount=type=cache,target=/root/.npm npm ci --strict-ssl=true
 COPY . .
 RUN npm run build
-RUN --mount=type=secret,id=proxy_ca \
-    if [ -f /run/secrets/proxy_ca ]; then NODE_EXTRA_CA_CERTS=/run/secrets/proxy_ca npm prune --omit=dev --strict-ssl=true; else npm prune --omit=dev; fi
+RUN --mount=type=cache,target=/root/.npm npm prune --omit=dev --strict-ssl=true
 
 FROM node:24-bookworm-slim
 ENV NODE_ENV=production DATA_DIR=/data PORT=3000
@@ -22,6 +20,5 @@ COPY --from=build /app/src/i18n/content.js ./src/i18n/content.js
 COPY --from=build /app/public ./public
 COPY --from=build /app/scripts ./scripts
 RUN mkdir -p /data
-VOLUME ["/data"]
 EXPOSE 3000
 CMD ["npm", "start"]
