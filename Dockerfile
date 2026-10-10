@@ -2,10 +2,10 @@
 FROM node:24-bookworm-slim AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN --mount=type=cache,target=/root/.npm npm ci --strict-ssl=true
+RUN --mount=type=cache,id=vera-npm-cache,target=/root/.npm npm ci --strict-ssl=true
 COPY . .
 RUN npm run build
-RUN --mount=type=cache,target=/root/.npm npm prune --omit=dev --strict-ssl=true
+RUN --mount=type=cache,id=vera-npm-cache,target=/root/.npm npm prune --omit=dev --strict-ssl=true
 
 FROM node:24-bookworm-slim
 ENV NODE_ENV=production DATA_DIR=/data PORT=3000
