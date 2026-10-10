@@ -141,6 +141,7 @@ export function Header({ user, onLogout }) {
       <nav
         className={open ? "v-nav open" : "v-nav"}
         aria-label={t("القائمة الرئيسية", "Main navigation")}
+        onClick={location.pathname === "/" ? () => setOpen(false) : undefined}
       >
         <Link to="/templates">{t("القوالب", "Templates")}</Link>
         <a href="/#how">{t("كيف تبدأ", "How it works")}</a>

@@ -5,6 +5,7 @@ import { Route, Routes, useLocation } from "react-router-dom";
 import { Helmet } from "react-helmet";
 
 import "./platform.css";
+import "./landing.css";
 import Home from "./Home";
 import Login from "./Login";
 import Workspace from "./Workspace";
@@ -182,7 +183,7 @@ export default function Platform({ initialConfig }) {
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const nodes = document.querySelectorAll(
-      ".v-intro,.v-section-heading,.v-template,.v-steps article,.v-control>div",
+      ".v-intro,.v-section-heading,.v-template,.v-steps li,.v-control>div,.v-collection-track article,.v-feature-grid article,.v-transfer-steps article",
     );
     const observer = new IntersectionObserver(
       (entries) =>
@@ -210,7 +211,9 @@ export default function Platform({ initialConfig }) {
     }
   }
   return (
-    <div className="v-shell">
+    <div
+      className={"v-shell" + (location.pathname === "/" ? " v-landing" : "")}
+    >
       <Helmet>
         {/^\/(workspace|owner|login)(\/|$)/.test(location.pathname) ? (
           <meta name="robots" content="noindex,nofollow" />

@@ -1,0 +1,134 @@
+[
+  {
+    "language": "ar",
+    "width": 390,
+    "problems": {
+      "overflow": false,
+      "headings": [],
+      "buttons": [],
+      "images": []
+    },
+    "errors": []
+  },
+  {
+    "language": "ar",
+    "width": 1440,
+    "problems": {
+      "overflow": false,
+      "headings": [],
+      "buttons": [],
+      "images": []
+    },
+    "errors": []
+  },
+  {
+    "language": "ar",
+    "width": 320,
+    "problems": {
+      "overflow": false,
+      "headings": [],
+      "buttons": [],
+      "images": []
+    },
+    "errors": []
+  },
+  {
+    "language": "ar",
+    "width": 360,
+    "problems": {
+      "overflow": false,
+      "headings": [],
+      "buttons": [],
+      "images": []
+    },
+    "errors": []
+  },
+  {
+    "language": "ar",
+    "width": 768,
+    "problems": {
+      "overflow": false,
+      "headings": [],
+      "buttons": [],
+      "images": []
+    },
+    "errors": []
+  },
+  {
+    "language": "ar",
+    "width": 1024,
+    "problems": {
+      "overflow": false,
+      "headings": [],
+      "buttons": [],
+      "images": []
+    },
+    "errors": []
+  },
+  {
+    "language": "en",
+    "width": 390,
+    "problems": {
+      "overflow": false,
+      "headings": [],
+      "buttons": [],
+      "images": []
+    },
+    "errors": []
+  },
+  {
+    "language": "en",
+    "width": 1440,
+    "problems": {
+      "overflow": false,
+      "headings": [],
+      "buttons": [],
+      "images": []
+    },
+    "errors": []
+  },
+  {
+    "language": "en",
+    "width": 320,
+    "problems": {
+      "overflow": false,
+      "headings": [],
+      "buttons": [],
+      "images": []
+    },
+    "errors": []
+  },
+  {
+    "language": "en",
+    "width": 360,
+    "problems": {
+      "overflow": false,
+      "headings": [],
+      "buttons": [],
+      "images": []
+    },
+    "errors": []
+  },
+  {
+    "language": "en",
+    "width": 768,
+    "problems": {
+      "overflow": false,
+      "headings": [],
+      "buttons": [],
+      "images": []
+    },
+    "errors": []
+  },
+  {
+    "language": "en",
+    "width": 1024,
+    "problems": {
+      "overflow": false,
+      "headings": [],
+      "buttons": [],
+      "images": []
+    },
+    "errors": []
+  }
+]

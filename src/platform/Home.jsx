@@ -1,7 +1,8 @@
 import LandingJourney from "./LandingJourney";
+import LandingCollection from "./LandingCollection";
 import "@/motion.css";
 
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { useLanguage } from "@/i18n/LanguageContext";
 
@@ -11,15 +12,33 @@ import {
   SlidersHorizontal,
   Globe2,
   Check,
+  CreditCard,
+  Sparkles,
   ChevronDown,
 } from "lucide-react";
 
 import "./platform.css";
 
-import { useCopy, Mark, Button, TemplateCard } from "./PlatformUI";
+import { useCopy, Mark, Button } from "./PlatformUI";
 const assets = "/platform/assets/";
 export default function Home({ config }) {
   const t = useCopy();
+  const hero = useRef(null);
+  useEffect(() => {
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const move = () =>
+      hero.current?.classList.toggle(
+        "is-scrolled",
+        !media.matches && window.scrollY > 80,
+      );
+    move();
+    window.addEventListener("scroll", move, { passive: true });
+    media.addEventListener("change", move);
+    return () => {
+      window.removeEventListener("scroll", move);
+      media.removeEventListener("change", move);
+    };
+  }, []);
   const { language } = useLanguage();
   const price = new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -33,7 +52,7 @@ export default function Home({ config }) {
   );
   return (
     <>
-      <section className="v-hero">
+      <section className="v-hero" ref={hero}>
         <div className="v-hero-top v-frame" aria-hidden="true">
           <img src={assets + "hero.jpg"} alt="" />
         </div>
@@ -41,7 +60,7 @@ export default function Home({ config }) {
           <img src={assets + "hero.jpg"} alt="" />
         </div>
         <div className="v-hero-right v-frame" aria-hidden="true">
-          <img src={assets + "gala-storefront.png"} alt="" />
+          <img src="/assets/gala-fashion-2.jpg" alt="" />
         </div>
         <div className="v-hero-copy">
           <span className="v-hero-badge">
@@ -83,7 +102,7 @@ export default function Home({ config }) {
         </div>
       </section>
       <section className="v-intro">
-        <div className="v-polaroid">
+        <div className="v-polaroid v-intro-main-photo">
           <img
             src={assets + "hero.jpg"}
             alt={t("تفاصيل منتجات المتجر", "Store product details")}
@@ -91,12 +110,17 @@ export default function Home({ config }) {
           />
           <span>MADE TO BE YOURS.</span>
         </div>
-        <div>
+        <div className="v-intro-small-photo v-polaroid" aria-hidden="true">
+          <img src="/assets/gala-fashion-3.jpg" alt="" loading="lazy" />
+        </div>
+        <div className="v-intro-side-photo v-polaroid" aria-hidden="true">
+          <img src="/assets/gala-fashion-2.jpg" alt="" loading="lazy" />
+        </div>
+        <div className="v-intro-copy">
           <p className="v-eyebrow">VÉRA · COMMERCE, CONSIDERED.</p>
           <h2>
-            {t("لأفكار تستحق", "For ideas that deserve")}
-            <br />
-            <em>{t("أن تصبح علامة.", "to become a brand.")}</em>
+            <em>{t("مساحة لأفكارك.", "A HOME FOR")}</em>
+            <span>{t("وبداية لعلامتك.", "YOUR BRAND.")}</span>
           </h2>
           <p>
             {t(
@@ -104,40 +128,35 @@ export default function Home({ config }) {
               "Start with the right design, and focus on what you create. Your storefront, products, and orders, together in one considered experience.",
             )}
           </p>
-          <a href="#templates" className="v-text-link">
-            {t("اكتشف البداية", "Find your starting point")}
-            <ArrowUpRight size={18} />
-          </a>
+          <ul className="v-intro-promises">
+            <li>
+              <CreditCard size={19} aria-hidden="true" />
+              {t("بدون بطاقة بنكية.", "No credit card required.")}
+            </li>
+            <li>
+              <Sparkles size={19} aria-hidden="true" />
+              {t("١٤ يومًا لتجربة مساحتك.", "14 days to make it yours.")}
+            </li>
+          </ul>
+          <div className="v-actions">
+            <Button to="/login?intent=create">
+              {t("ابدأ متجرك", "Get started")}
+            </Button>
+            <a href="#pricing" className="v-text-link">
+              {t("شاهد الأسعار", "See pricing")}
+            </a>
+          </div>
         </div>
-      </section>
-      <section id="templates" className="v-section">
-        <div className="v-section-heading">
-          <span className="v-eyebrow">01 / THE COLLECTION</span>
-          <h2>
-            {t("مساحة جاهزة.", "A considered canvas.")}
-            <br />
-            <em>{t("وشخصيتها منك.", "A signature that’s yours.")}</em>
-          </h2>
-          <p>
-            {t(
-              "GALA بفخامته، وأتيليه بدفئه، وFORM برؤيته العصرية. ثلاث هويات مختلفة، وإدارة متكاملة لعلامتك.",
-              "GALA’s quiet luxury. The Atelier’s warm editorial character. FORM’s modern perspective. Three distinct storefronts, each ready for your brand.",
-            )}
-          </p>
-        </div>
-        {config.templates.map((template) => (
-          <TemplateCard key={template.id} template={template} />
-        ))}
       </section>
       <section id="how" className="v-how">
         <div className="v-section-heading">
-          <span className="v-eyebrow">02 / YOUR NEXT CHAPTER</span>
+          <span className="v-eyebrow">YOUR NEXT CHAPTER</span>
           <h2>
             {t("من الفكرة", "From your first idea")}{" "}
             <em>{t("لأول طلب.", "to your first order.")}</em>
           </h2>
         </div>
-        <div className="v-steps">
+        <ol className="v-steps">
           {[
             [
               LayoutTemplate,
@@ -164,18 +183,24 @@ export default function Home({ config }) {
               ),
             ],
           ].map(([Icon, title, text], i) => (
-            <article key={title}>
+            <li key={title}>
               <span className="v-step-number">0{i + 1}</span>
+              <span className="v-timeline-dot" aria-hidden="true" />
               <Icon strokeWidth={1.2} />
-              <h3>{title}</h3>
-              <p>{text}</p>
-            </article>
+              <div className="v-step-copy">
+                <h3>{title}</h3>
+                <p>{text}</p>
+              </div>
+            </li>
           ))}
-        </div>
+        </ol>
       </section>
+      <LandingCollection templates={config.templates} />
       <section className="v-control">
         <div>
-          <span className="v-eyebrow">03 / BEHIND THE BEAUTY</span>
+          <span className="v-hero-badge">
+            ✦ {t("خلف المتجر", "Behind the storefront")}
+          </span>
           <h2>
             {t("واجهة أنيقة.", "Beautiful in front.")}
             <br />
@@ -205,6 +230,14 @@ export default function Home({ config }) {
           </Button>
         </div>
         <div className="v-dashboard-frame">
+          <div className="v-dashboard-chrome" aria-hidden="true">
+            <span>
+              <i />
+              <i />
+              <i />
+            </span>
+            <span>VÉRA / STUDIO</span>
+          </div>
           <picture>
             <source
               media="(max-width: 767px)"
@@ -223,7 +256,7 @@ export default function Home({ config }) {
           {t("معاينة ببيانات تجريبية", "Preview with sample data")}
         </small>
       </section>
-      <LandingJourney config={config} />
+      <LandingJourney />
       <section id="pricing" className="v-section v-pricing">
         <div>
           <span className="v-eyebrow">04 / A SIMPLE START</span>
@@ -359,6 +392,13 @@ export default function Home({ config }) {
         ))}
       </section>
       <section className="v-closing">
+        <img
+          className="v-closing-art"
+          src="/assets/gala-fashion-3.jpg"
+          alt=""
+          aria-hidden="true"
+          loading="lazy"
+        />
         <Mark large />
         <h2>
           {t("كل علامة عظيمة،", "Every great brand")}
