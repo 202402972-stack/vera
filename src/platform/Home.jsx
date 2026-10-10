@@ -1,10 +1,10 @@
 import LandingJourney from "./LandingJourney";
 import LandingCollection from "./LandingCollection";
+import MerchantPreview from "./MerchantPreview";
 import "@/motion.css";
 
 import React, { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { useLanguage } from "@/i18n/LanguageContext";
 
 import {
   ArrowUpRight,
@@ -39,7 +39,6 @@ export default function Home({ config }) {
       media.removeEventListener("change", move);
     };
   }, []);
-  const { language } = useLanguage();
   const price = new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: config.displayPricing?.displayDefaultCurrency || "USD",
@@ -229,32 +228,7 @@ export default function Home({ config }) {
             <ArrowUpRight size={16} />
           </Button>
         </div>
-        <div className="v-dashboard-frame">
-          <div className="v-dashboard-chrome" aria-hidden="true">
-            <span>
-              <i />
-              <i />
-              <i />
-            </span>
-            <span>VÉRA / STUDIO</span>
-          </div>
-          <picture>
-            <source
-              media="(max-width: 767px)"
-              srcSet={assets + `gala-studio-${language}-390.webp`}
-            />
-            <img
-              src={assets + `gala-studio-${language}-1440.webp`}
-              alt={t("معاينة لوحة إدارة GALA", "GALA store management preview")}
-              loading="lazy"
-              width="1440"
-              height="1020"
-            />
-          </picture>
-        </div>
-        <small className="v-dashboard-caption">
-          {t("معاينة ببيانات تجريبية", "Preview with sample data")}
-        </small>
+        <MerchantPreview />
       </section>
       <LandingJourney />
       <section id="pricing" className="v-section v-pricing">

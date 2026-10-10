@@ -59,16 +59,16 @@ for (const language of ["ar", "en"]) {
         await expect(page.locator(".v-nav")).not.toBeVisible();
         await expect(page).toHaveURL(/#pricing$/);
       }
-      await page.locator(".v-dashboard-frame").scrollIntoViewIfNeeded();
+      await page.locator(".v-merchant-preview").scrollIntoViewIfNeeded();
       await expect
         .poll(() =>
           page
-            .locator(".v-dashboard-frame img")
+            .locator(".v-merchant-slide.is-active img")
             .evaluate((e) => e.naturalWidth),
         )
-        .toBe(width < 768 ? 390 : 1440);
+        .toBe(800);
       const image = await page
-        .locator(".v-dashboard-frame img")
+        .locator(".v-merchant-slide.is-active img")
         .evaluate((e) => ({
           original: e.naturalWidth / e.naturalHeight,
           shown: e.clientWidth / e.clientHeight,
